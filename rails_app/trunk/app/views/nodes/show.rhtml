@@ -1,0 +1,157 @@
+<%- @page_title = "Node: " + h(@node.name) %>
+
+<%= render :partial => 'shared/deleted_message', :locals => { :object => @node} %>
+
+<div class="record_view">
+
+<h1>Node: <%=h @node.name %></h1>
+
+<p><strong>Status:</strong> <%= link_to h(@node.status.name), status_url(@node.status) %><br />
+<strong>Serial Number:</strong> <%= h(@node.serial_number) %><br />
+<strong>IP Addresses:</strong> <%= h(@node.ipaddresses_as_string_list) %><br />
+<strong>Hardware Profile:</strong> <%= link_to h(@node.hardware_profile.name), hardware_profile_url(@node.hardware_profile) %><br />
+
+<strong>Operating System:</strong> 
+<%- if @node.operating_system -%>
+  <%= link_to h(@node.operating_system.name), operating_system_url(@node.operating_system) %>
+<%- end -%>
+</p>
+
+<p class="metadata"><strong>Created at:</strong> <%= h(@node.created_at) %><br />
+<strong>Updated at:</strong> <%= h(@node.updated_at) %></p>
+
+<div class="relationship">
+
+<div id="node_function_assignments">
+<%= render :partial => 'function_assignments', :locals => { :node => @node} %>
+</div> <!-- end rack_node_assignments -->
+
+<div id="create_function_assignment">
+<%= render :partial => 'shared/create_assignment', :locals => { :from => 'node', :to => 'function'} %>
+</div>
+
+<p id="new_function">
+
+</p>
+
+<p id="add_function_assignment_link">
+<%= render :partial => 'shared/add_inline_link', :locals => { :from => 'node', :to => 'function'} %>
+</p>
+
+</div> <!-- end relationship -->
+
+
+
+<%- if @node.is_database_server? -%>
+<div class="relationship">
+<div id="node_database_instance_assignments">
+<%= render :partial => 'database_instance_assignments', :locals => { :node => @node} %>
+</div> <!-- end rack_node_assignments -->
+
+<div id="create_database_instance_assignment">
+<%= render :partial => 'shared/create_assignment', :locals => { :from => 'node', :to => 'database_instance'} %>
+</div>
+
+<p id="new_database_instance">
+
+</p>
+
+<p id="add_database_instance_assignment_link">
+<%= render :partial => 'shared/add_inline_link', :locals => { :from => 'node', :to => 'database_instance'} %>
+</p>
+</div> <!-- end relationship -->
+<%- end -%>
+
+
+
+<%- if @node.hardware_profile.outlet_count > 0 and @node.produced_outlets.count > 0 -%>
+<div class="relationship">
+  <table cellspacing="0" class="styled" summary="A list of the outlets supplied by this node.">
+  <caption><%= @node.hardware_profile.outlet_type %> Outlets</caption>
+  <thead>
+  <tr>
+      <th>Name</th>
+      <th>Consumer</th>
+      <th>&nbsp;</th>
+  </tr>
+  </thead>
+  <tbody>
+  <%- for outlet in @node.produced_outlets %>
+  <tr class="<%= cycle('odd', 'even') -%>">
+      <td><%= h(outlet.name) %></td>
+      <td id="<%= dom_id(outlet) %>"><%- if outlet.consumer.nil? -%>
+        n/a
+      <%- else -%>
+        <%= link_to outlet.consumer.name, node_path(outlet.consumer) %>
+      <%- end -%>
+      </td>
+      <td><%= link_to_remote "Assign", :url => edit_outlet_path(outlet), :method => :get, :update => dom_id(outlet) %></td>
+  </tr>
+  <%- end %>
+  </tbody>
+  </table>
+</div> <!-- end relationship -->
+<%- end -%>
+
+<div class="smartrelationship">
+<h3>Smart Relationships</h3>
+
+<%- if @node.rack_node_assignment.nil? -%>
+<p>This node is not in a rack.</p>
+<%- else -%>
+<p>This node is located in rack: <%= link_to h(@node.rack_node_assignment.rack.name), rack_path(@node.rack_node_assignment.rack) %>.</p>
+<%- end -%>
+
+<%- if @node.environment_node_assignments.count > 0 -%>
+<p>This node is located in the following environments: 
+<%- i = 0 -%>
+<%- @node.environment_node_assignments.each do |assignment| -%>
+  <%= link_to assignment.environment.name, environment_path(assignment.environment) %><%- i = i + 1 -%><%- if @node.environment_node_assignments.count > i -%>,<%- end -%>
+<%- end -%>
+<%- else -%>
+<p>This node is not in an environment.</p>
+<%- end -%>
+
+<%- if @node.hardware_profile.nics > 0 -%>
+<p>This node has <%= h(@node.hardware_profile.nics.to_s) %> NICS that consume bandwidth. Connected producers are:</p>
+<ul>
+<%- i = 0 -%>
+<%- @node.hardware_profile.nics.times do -%>
+<li>#<%= i.to_s %>: <%= !@node.consumed_network_outlets.at(i).nil? ? link_to(@node.consumed_network_outlets.at(i).producer.name, node_path(@node.consumed_network_outlets.at(i).producer)) : 'n/a' %></li>
+<%- i = i + 1 -%>
+<%- end -%>
+</ul>
+<%- else -%>
+<p>This node is does not have any NICS that consume bandwidth.</p>
+<%- end -%>
+
+<%- if @node.hardware_profile.power_supply_count > 0 -%>
+<p>This node has <%= h(@node.hardware_profile.power_supply_count.to_s) %> power supplies that consume electricity. Connected producers are:</p>
+
+<ul>
+<%- i = 0 -%>
+<%- @node.hardware_profile.power_supply_count.times do -%>
+<li>#<%= i.to_s %>: <%= !@node.consumed_power_outlets.at(i).nil? ? link_to(@node.consumed_power_outlets.at(i).producer.name, node_path(@node.consumed_power_outlets.at(i).producer)) : 'n/a' %></li>
+<%- i = i + 1 -%>
+<%- end -%>
+</ul>
+
+
+<%- else -%>
+<p>This node is does not have any power supplies that consume power.</p>
+<%- end -%>
+</div> <!-- end smartrelationship -->
+
+</div>
+
+<%- if !@node.deleted_at -%>
+<p><%= link_to 'Edit', edit_node_path(@node) %> | 
+<%= link_to 'Delete', node_path(@node), :confirm => 'Are you sure?', :method => :delete %></p>
+<%- end -%>
+
+<%= render :partial => 'shared/version_information', :locals => { :object => @node} %>
+
+<%= javascript_tag "Element.hide('create_function_assignment')" %>
+<%= javascript_tag "Element.hide('create_database_instance_assignment')" %>
+
+<%= javascript_tag "_node_id = "+@node.id.to_s %>

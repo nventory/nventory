@@ -1,0 +1,1 @@
+page.replace_html 'datacenter_rack_assignments', {:partial => 'datacenters/rack_assignments', :locals => { :datacenter => @datacenter} }

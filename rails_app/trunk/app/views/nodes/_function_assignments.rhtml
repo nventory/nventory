@@ -1,0 +1,26 @@
+<%- if node.node_function_assignments.count > 0 -%>
+  <table cellspacing="0" class="styled" summary="A list of the functions assigned to this node.">
+  <caption>Functions</caption>
+  <thead>
+  <tr>
+      <th>Name</th>
+      <th>Assigned at</th>
+      <th>&nbsp;</th>
+  </tr>
+  </thead>
+  <tbody>
+  <%- for assignment in node.node_function_assignments %>
+  <tr class="<%= cycle('odd', 'even') -%>" id="<%= dom_id(assignment) %>">
+      <td><%= link_to assignment.function.name, function_path(assignment.function) %></td>
+      <td><%= link_to h(assignment.assigned_at.to_formatted_s(:long)), node_function_assignment_path(assignment) %></td>
+      <td><%= link_to_remote 'Delete',
+                              :url => node_function_assignment_path(assignment),
+                              :confirm => 'Are you sure?',
+                              :method => :delete %></td>
+  </tr>
+  <%- end %>
+  </tbody>
+  </table>
+<%- else -%>
+  <p>No function are assigned to this node.</p>
+<%- end -%>

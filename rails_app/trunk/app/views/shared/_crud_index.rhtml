@@ -1,0 +1,12 @@
+<%- @page_title = objects.first.class.to_s.underscore.titleize.pluralize %>
+<h1><%= objects.first.class.to_s.underscore.titleize.pluralize %></h1>
+
+<p><%= link_to 'New ' + objects.first.class.to_s.titleize, self.send('new_' + objects.first.class.to_s.underscore + '_path') %></p>
+
+<%- if !total_found.blank? -%>
+<p>Total found: <%= total_found.to_s %></p>
+<%- end -%>
+
+<div id="results_table">
+<%= render :partial => 'shared/results_table', :locals => { :pages => pages, :objects => objects } %>
+</div> <!-- end results_table div -->

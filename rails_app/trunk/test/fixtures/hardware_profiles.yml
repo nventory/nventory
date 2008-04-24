@@ -1,0 +1,27 @@
+# Read about fixtures at http://ar.rubyonrails.org/classes/Fixtures.html
+one:
+  id: 1
+  name: MyString
+  manufacturer: MyString
+  rack_size: 1
+  memory: MyString
+  disk: MyString
+  nics: MyString
+  processor_type: MyString
+  processor_speed: MyString
+  processor_count: 1
+  cards: MyString
+  notes: MyText
+two:
+  id: 2
+  name: MyString
+  manufacturer: MyString
+  rack_size: 1
+  memory: MyString
+  disk: MyString
+  nics: MyString
+  processor_type: MyString
+  processor_speed: MyString
+  processor_count: 1
+  cards: MyString
+  notes: MyText

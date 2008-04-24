@@ -1,0 +1,5 @@
+<p><strong>Name</strong> <em>*</em> <br /> <%= f.text_field :name %></p>
+
+<p><strong>Relevant Model:</strong> <br /><%= f.select :relevant_model, Status.relevant_models_allowed %></p>
+
+<p><strong>Notes</strong> <br /> <%= f.text_area :notes, {"cols" => 30, "rows" => 4}  %></p>

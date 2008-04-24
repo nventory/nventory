@@ -1,0 +1,2 @@
+module DatacenterEnvironmentAssignmentsHelper
+end

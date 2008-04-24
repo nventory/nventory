@@ -1,0 +1,5 @@
+<%- if Environment.count > 0 -%>
+  <%= render :partial => 'shared/crud_index', :locals => { :pages => @objects_pages, :objects => @objects, :total_found => nil } %>
+<%- else -%>
+  <%= render :partial => 'shared/crud_index_none', :locals => { :object_type => 'environment' } %>
+<%- end -%>

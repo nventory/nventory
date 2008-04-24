@@ -1,0 +1,2 @@
+module NodeFunctionAssignmentsHelper
+end

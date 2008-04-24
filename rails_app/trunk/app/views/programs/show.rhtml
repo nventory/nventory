@@ -1,0 +1,29 @@
+<%- @page_title = "Program: " + h(@program.name) %>
+
+<%= render :partial => 'shared/deleted_message', :locals => { :object => @program} %>
+
+<div class="record_view">
+
+<h1>Program: <%=h @program.name %></h1>
+
+<p><strong>Notes:</strong><br />
+<%= textilize_without_paragraph(h(@program.notes)) %></p>
+
+<p><strong>Customer:</strong> <%= link_to h(@program.customer.name), customer_url(@program.customer) %><br />
+<strong>Status:</strong> <%= link_to h(@program.status.name), status_url(@program.status) %><br />
+<strong>Main URL:</strong> <%= @program.main_url %><br />
+<strong>Stream URL:</strong> <%= @program.stream_url %><br />
+<strong>Analytics URL:</strong> <%= @program.analytics_url %><br />
+<strong>Reporting URL:</strong> <%= @program.reporting_url %></p>
+
+<p class="metadata"><strong>Created at:</strong> <%= h(@program.created_at) %><br />
+<strong>Updated at:</strong> <%= h(@program.updated_at) %></p>
+
+</div>
+
+<%- if !@program.deleted_at -%>
+<p><%= link_to 'Edit', edit_program_path(@program) %> | 
+<%= link_to 'Delete', program_path(@program), :confirm => 'Are you sure?', :method => :delete %></p>
+<%- end -%>
+
+<%= render :partial => 'shared/version_information', :locals => { :object => @program} %>

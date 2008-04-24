@@ -1,0 +1,73 @@
+<%- @page_title = "Environment: " + h(@environment.name) %>
+
+<%= render :partial => 'shared/deleted_message', :locals => { :object => @environment} %>
+
+<div class="record_view">
+
+<h1>Environment: <%= h(@environment.name) %></h1>
+
+<p><%= link_to 'XML Configuration File (Not working yet)', environment_path(@environment) + '.xml' %>
+
+<p><strong>Estimated Investment:</strong> <%= number_to_currency(@environment.estimated_investment) %></p>
+
+<%- unless @environment.notes.nil? -%>
+<p><strong>Notes:</strong><br />
+<%= textilize_without_paragraph(h(@environment.notes)) %></p>
+<%- end -%>
+
+<p class="metadata"><strong>Created at:</strong> <%= h(@environment.created_at) %><br />
+<strong>Updated at:</strong> <%= h(@environment.updated_at) %></p>
+
+<div class="relationship">
+
+<div id="environment_program_assignments">
+<%= render :partial => 'program_assignments', :locals => { :environment => @environment} %>
+</div> <!-- end environment_program_assignments -->
+
+<div id="create_program_assignment">
+<%= render :partial => 'shared/create_assignment', :locals => { :from => 'environment', :to => 'program'} %>
+</div>
+
+<p id="new_program">
+
+</p>
+
+<p id="add_program_assignment_link">
+<%= render :partial => 'shared/add_inline_link', :locals => { :from => 'environment', :to => 'program'} %>
+</p>
+
+</div> <!-- end relationship -->
+
+<div class="relationship">
+
+<div id="environment_node_assignments">
+<%= render :partial => 'node_assignments', :locals => { :environment => @environment} %>
+</div> <!-- end environment_program_assignments -->
+
+<div id="create_node_assignment">
+<%= render :partial => 'shared/create_assignment', :locals => { :from => 'environment', :to => 'node'} %>
+</div>
+
+<p id="new_node">
+
+</p>
+
+<p id="add_node_assignment_link">
+<%= render :partial => 'shared/add_inline_link', :locals => { :from => 'environment', :to => 'node'} %>
+</p>
+
+</div> <!-- end relationship -->
+
+</div>
+
+<%- if !@environment.deleted_at -%>
+<p><%= link_to 'Edit', edit_environment_path(@environment) %> | 
+<%= link_to 'Delete', environment_path(@environment), :confirm => 'Are you sure?', :method => :delete %></p>
+<%- end -%>
+
+<%= render :partial => 'shared/version_information', :locals => { :object => @environment} %>
+
+<%= javascript_tag "_environment_id = "+@environment.id.to_s %>
+
+<%= javascript_tag "Element.hide('create_program_assignment')" %>
+<%= javascript_tag "Element.hide('create_node_assignment')" %>

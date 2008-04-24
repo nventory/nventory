@@ -1,0 +1,46 @@
+<h3>Version History | <%= link_to_function 'Show/Hide', "Element.toggle('version_table')" %></h3> 
+
+<table cellspacing="0" class="arversions" summary="A version history of this object." id="version_table">
+<thead>
+<tr>
+    <th>Version # (Date)</th>
+    <th>Attributes</th>
+</tr>
+</thead>
+<tbody>
+<%- for master_version in master_object.find_versions -%>
+  <%- previous_version = master_object.find_version(master_version.version - 1) -%>
+<tr class="<%= cycle('odd', 'even') -%>">
+    <td><%= h(master_version.version) %> <span class="arversion_date">(<%= h(master_version.updated_at.to_formatted_s(:short)) %>)</td>
+    <td>
+      <table cellspacing="0" class="arattributes" summary="All the attributes as they were in this version of the model.">
+        <%- master_object.versioned_attributes.each do |attribute| -%>
+          <%- if !['created_at', 'updated_at', 'deleted_at'].include?(attribute) -%>
+            <tr>
+              <th><%= h(attribute) %></th>
+              <td>
+                
+                <%- master_version_value = master_version.send "#{attribute}" -%>
+                <%- if !previous_version.nil? -%>
+                  <%- previous_version_value = previous_version.send "#{attribute}" -%>
+                <%- else -%>
+                  <%- previous_version_value = nil -%>
+                <%- end -%>
+                
+                <%- if !previous_version_value.nil? and previous_version_value != master_version_value -%>
+                  <del><%= h(previous_version_value) %></del><ins><%= h(master_version_value) %></ins>
+                <%- else -%>
+                  <%= h(master_version_value) %>
+                <%- end -%>
+                
+              </td>
+            </tr>
+          <%- end -%>
+        <%- end -%>
+      </table>
+    
+    </td>
+</tr>
+<%- end %>
+</tbody>
+</table>

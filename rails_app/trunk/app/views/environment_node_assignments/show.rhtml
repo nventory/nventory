@@ -1,0 +1,23 @@
+<%- @page_title = "Environment Node Assignment: " + h(@environment_node_assignment.environment.name) + '<->' + h(@environment_node_assignment.node.name) %>
+
+<%= render :partial => 'shared/deleted_message', :locals => { :object => @environment_node_assignment} %>
+
+<div class="record_view">
+
+<h1>Environment Node Assignment</h1>
+
+<p><strong>Environment:</strong> <%= h(@environment_node_assignment.environment.name) %><br />
+<strong>Node:</strong> <%= h(@environment_node_assignment.node.name) %><br />
+<strong>Assigned at:</strong> <%= h(@environment_node_assignment.assigned_at.to_formatted_s(:long)) %></p>
+
+<p class="metadata"><strong>Created at:</strong> <%= h(@environment_node_assignment.created_at) %><br />
+<strong>Updated at:</strong> <%= h(@environment_node_assignment.updated_at) %></p>
+
+</div>
+
+<%- if !@environment_node_assignment.deleted_at -%>
+<p><%= link_to 'Edit', edit_environment_node_assignment_path(@environment_node_assignment) %> | 
+<%= link_to 'Delete', environment_node_assignment_path(@environment_node_assignment), :confirm => 'Are you sure?', :method => :delete %></p>
+<%- end -%>
+
+<%= render :partial => 'shared/version_information', :locals => { :object => @environment_node_assignment} %>

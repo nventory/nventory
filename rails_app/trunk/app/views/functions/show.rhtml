@@ -1,0 +1,24 @@
+<%- @page_title = "Function: " + h(@function.name) %>
+
+<%= render :partial => 'shared/deleted_message', :locals => { :object => @function} %>
+
+<div class="record_view">
+
+<h1>Function: <%=h @function.name %></h1>
+
+<p><strong>Type:</strong> <%= h(@function.function_type.name) %></p>
+
+<p><strong>Notes:</strong><br />
+<%= textilize_without_paragraph(h(@function.notes)) %></p>
+
+<p class="metadata"><strong>Created at:</strong> <%= h(@function.created_at) %><br />
+<strong>Updated at:</strong> <%= h(@function.updated_at) %></p>
+
+</div>
+
+<%- if !@function.deleted_at -%>
+<p><%= link_to 'Edit', edit_function_path(@function) %> | 
+<%= link_to 'Delete', function_path(@function), :confirm => 'Are you sure?', :method => :delete %></p>
+<%- end -%>
+
+<%= render :partial => 'shared/version_information', :locals => { :object => @function} %>

@@ -1,0 +1,32 @@
+<%- if environment.environment_node_assignments.count > 0 -%>
+  <table cellspacing="0" class="styled" summary="A list of the nodes assigned to this environment.">
+  <caption>Nodes</caption>
+  <thead>
+  <tr>
+      <th>Name</th>
+      <th>Functions</th>
+      <th>Hardware Profile</th>
+      <th>Rack</th>
+      <th>Added</th>
+      <th>&nbsp;</th>
+  </tr>
+  </thead>
+  <tbody>
+  <%- environment.environment_node_assignments.each do |assignment| %>
+  <tr class="<%= cycle('odd', 'even') -%>" id="<%= dom_id(assignment) %>">
+      <td><%= link_to assignment.node.name, node_path(assignment.node) %></td>
+      <td><%= assignment.node.functions_as_string_list %></td>
+      <td><%= assignment.node.hardware_profile.name %></td>
+      <td><%= assignment.node.rack_node_assignment.nil? ? '&nbsp;' : assignment.node.rack_node_assignment.rack.name %></td>
+      <td><%= link_to h(assignment.assigned_at.to_formatted_s(:short)), environment_node_assignment_path(assignment) %></td>
+      <td><%= link_to_remote 'Delete',
+                              :url => environment_node_assignment_path(assignment),
+                              :confirm => 'Are you sure?',
+                              :method => :delete %></td>
+  </tr>
+  <%- end %>
+  </tbody>
+  </table>
+<%- else -%>
+  <p>No nodes are assigned to this environment.</p>
+<%- end -%>

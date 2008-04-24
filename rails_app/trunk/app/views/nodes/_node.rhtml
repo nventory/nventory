@@ -1,0 +1,11 @@
+<p><strong>Name:</strong> <em>*</em> <br/><%= f.text_field :name %></p>
+
+<p><strong>Status:</strong> <em>*</em> <br /><%= f.select :status_id, Status.allowed_statuses_for_model(@node).collect { |s| [ s.name, s.id ] }, { :include_blank => true } %></p>
+
+<p><strong>Serial Number:</strong> <br/><%= f.text_field :serial_number %></p>
+
+<p><strong>IP Addresses: <span class="note">(list each IP address on its own line)</span></strong> <br/><%= f.text_area :ipaddresses, {"cols" => 30, "rows" => 3} %></p>
+
+<p><strong>Hardware Profile:</strong> <em>*</em> <br /><%= f.select :hardware_profile_id, HardwareProfile.find(:all, :order => 'name').collect { |h| [ h.name, h.id ] }, { :include_blank => true } %></p>
+
+<p><strong>Operating System:</strong> <br /><%= f.select :operating_system_id, OperatingSystem.find(:all, :order => 'name').collect { |o| [ o.name, o.id ] }, { :include_blank => true } %></p>

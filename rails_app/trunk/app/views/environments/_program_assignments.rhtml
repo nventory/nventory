@@ -1,0 +1,28 @@
+<%- if environment.environment_program_assignments.length > 0 -%>
+  <table cellspacing="0" class="styled" summary="A list of the racks assigned to this datacenter.">
+  <caption>Customer Programs</caption>
+  <thead>
+  <tr>
+      <th>Customer</th>
+      <th>Program</th>
+      <th>Added</th>
+      <th>&nbsp;</th>
+  </tr>
+  </thead>
+  <tbody>
+  <%- environment.environment_program_assignments.sort_by { |a| a.program.customer.name + a.program.name }.each do |assignment| %>
+  <tr class="<%= cycle('odd', 'even') -%>" id="<%= dom_id(assignment) %>">
+      <td><%= link_to assignment.program.customer.name, customer_path(assignment.program.customer) %></td>
+      <td><%= link_to assignment.program.name, program_path(assignment.program) %></td>
+      <td><%= link_to h(assignment.assigned_at.to_formatted_s(:short)), environment_program_assignment_path(assignment) %></td>
+      <td><%= link_to_remote 'Delete',
+                              :url => environment_program_assignment_path(assignment),
+                              :confirm => 'Are you sure?',
+                              :method => :delete %></td>
+  </tr>
+  <%- end %>
+  </tbody>
+  </table>
+<%- else -%>
+  <p>No customer programs are assigned to this environment.</p>
+<%- end -%>
