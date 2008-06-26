@@ -15,7 +15,7 @@ class CreateOperatingSystems < ActiveRecord::Migration
     
     OperatingSystem.create_versioned_table
     
-    # add a column to node so it can have a hardware profile
+    # add a column to node so it can have an operating system
     add_column "nodes", "operating_system_id", :integer
     add_column "node_versions", "operating_system_id", :integer
     

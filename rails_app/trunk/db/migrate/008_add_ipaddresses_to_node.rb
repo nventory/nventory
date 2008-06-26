@@ -1,6 +1,6 @@
 class AddIpaddressesToNode < ActiveRecord::Migration
   def self.up
-    # add a column to node so it can have a hardware profile
+    # add a column to node so it can have IP addresses
     add_column "nodes", "ipaddresses", :text
     add_column "node_versions", "ipaddresses", :text
   end
