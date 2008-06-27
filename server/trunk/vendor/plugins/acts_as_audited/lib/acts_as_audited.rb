@@ -176,7 +176,7 @@ module CollectiveIdea #:nodoc:
         end
       
         def write_audit(action = :update, user = nil)
-          self.audits.create :changes => changed_attributes, :action => action.to_s, :user => user
+          self.audits.create(:changes => changed_attributes, :action => action.to_s, :user => user) if @changed_attributes.nil? || !@changed_attributes.empty?
         end
 
         # clears current changed attributes.  Called after save.
