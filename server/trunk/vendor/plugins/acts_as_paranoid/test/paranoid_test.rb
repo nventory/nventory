@@ -6,6 +6,9 @@ class Widget < ActiveRecord::Base
   has_and_belongs_to_many :habtm_categories, :class_name => 'Category'
   has_one :category
   belongs_to :parent_category, :class_name => 'Category'
+  has_many :taggings
+  has_many :tags, :through => :taggings
+  has_many :any_tags, :through => :taggings, :class_name => 'Tag', :source => :tag, :with_deleted => true
 end
 
 class Category < ActiveRecord::Base
@@ -22,11 +25,27 @@ class Category < ActiveRecord::Base
   end
 end
 
+class Tag < ActiveRecord::Base
+  has_many :taggings
+  has_many :widgets, :through => :taggings
+end
+
+class Tagging < ActiveRecord::Base
+  belongs_to :tag
+  belongs_to :widget
+  acts_as_paranoid
+end
+
 class NonParanoidAndroid < ActiveRecord::Base
 end
 
 class ParanoidTest < Test::Unit::TestCase
-  fixtures :widgets, :categories, :categories_widgets
+  fixtures :widgets, :categories, :categories_widgets, :tags, :taggings
+  
+  def test_should_exists_with_deleted
+    assert Widget.exists_with_deleted?(2)
+    assert !Widget.exists?(2)
+  end
 
   def test_should_count_with_deleted
     assert_equal 1, Widget.count
@@ -92,7 +111,7 @@ class ParanoidTest < Test::Unit::TestCase
   
   def test_should_not_count_deleted
     assert_equal 1, Widget.count
-    assert_equal 1, Widget.count(['title=?', 'widget 1'])
+    assert_equal 1, Widget.count(:all, :conditions => ['title=?', 'widget 1'])
     assert_equal 2, Widget.calculate_with_deleted(:count, :all)
   end
   
@@ -111,6 +130,16 @@ class ParanoidTest < Test::Unit::TestCase
     assert_equal [categories(:category_1)], widgets(:widget_1).habtm_categories
   end
   
+  def test_should_not_find_deleted_has_many_through_associations
+    assert_equal 1, widgets(:widget_1).tags.size
+    assert_equal [tags(:tag_2)], widgets(:widget_1).tags
+  end
+  
+  def test_should_find_has_many_through_associations_with_deleted
+    assert_equal 2, widgets(:widget_1).any_tags.size
+    assert_equal Tag.find(:all), widgets(:widget_1).any_tags
+  end
+
   def test_should_not_find_deleted_belongs_to_associations
     assert_nil Category.find_with_deleted(3).widget
   end
@@ -142,19 +171,19 @@ class ParanoidTest < Test::Unit::TestCase
   end
 
   def test_should_not_override_scopes_when_counting
-    assert_equal 1, Widget.with_scope(:find => { :conditions => "title = 'widget 1'" }) { Widget.count }
-    assert_equal 0, Widget.with_scope(:find => { :conditions => "title = 'deleted widget 2'" }) { Widget.count }
-    assert_equal 1, Widget.with_scope(:find => { :conditions => "title = 'deleted widget 2'" }) { Widget.calculate_with_deleted(:count, :all) }
+    assert_equal 1, Widget.send(:with_scope, :find => { :conditions => "title = 'widget 1'" }) { Widget.count }
+    assert_equal 0, Widget.send(:with_scope, :find => { :conditions => "title = 'deleted widget 2'" }) { Widget.count }
+    assert_equal 1, Widget.send(:with_scope, :find => { :conditions => "title = 'deleted widget 2'" }) { Widget.calculate_with_deleted(:count, :all) }
   end
 
   def test_should_not_override_scopes_when_finding
-    assert_equal [1], Widget.with_scope(:find => { :conditions => "title = 'widget 1'" }) { Widget.find(:all) }.ids
-    assert_equal [],  Widget.with_scope(:find => { :conditions => "title = 'deleted widget 2'" }) { Widget.find(:all) }.ids
-    assert_equal [2], Widget.with_scope(:find => { :conditions => "title = 'deleted widget 2'" }) { Widget.find_with_deleted(:all) }.ids
+    assert_equal [1], Widget.send(:with_scope, :find => { :conditions => "title = 'widget 1'" }) { Widget.find(:all) }.ids
+    assert_equal [],  Widget.send(:with_scope, :find => { :conditions => "title = 'deleted widget 2'" }) { Widget.find(:all) }.ids
+    assert_equal [2], Widget.send(:with_scope, :find => { :conditions => "title = 'deleted widget 2'" }) { Widget.find_with_deleted(:all) }.ids
   end
 
   def test_should_allow_multiple_scoped_calls_when_finding
-    Widget.with_scope(:find => { :conditions => "title = 'deleted widget 2'" }) do
+    Widget.send(:with_scope, :find => { :conditions => "title = 'deleted widget 2'" }) do
       assert_equal [2], Widget.find_with_deleted(:all).ids
       assert_equal [2], Widget.find_with_deleted(:all).ids, "clobbers the constrain on the unmodified find"
       assert_equal [], Widget.find(:all).ids
@@ -163,7 +192,7 @@ class ParanoidTest < Test::Unit::TestCase
   end
 
   def test_should_allow_multiple_scoped_calls_when_counting
-    Widget.with_scope(:find => { :conditions => "title = 'deleted widget 2'" }) do
+    Widget.send(:with_scope, :find => { :conditions => "title = 'deleted widget 2'" }) do
       assert_equal 1, Widget.calculate_with_deleted(:count, :all)
       assert_equal 1, Widget.calculate_with_deleted(:count, :all), "clobbers the constrain on the unmodified find"
       assert_equal 0, Widget.count
@@ -174,6 +203,12 @@ class ParanoidTest < Test::Unit::TestCase
   def test_should_give_paranoid_status
     assert Widget.paranoid?
     assert !NonParanoidAndroid.paranoid?
+  end
+
+  def test_should_give_record_status
+    assert_equal false, Widget.find(1).deleted? 
+    Widget.find(1).destroy
+    assert Widget.find_with_deleted(1).deleted?
   end
 
   def test_should_find_deleted_has_many_assocations_on_deleted_records_by_default

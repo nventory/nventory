@@ -19,6 +19,9 @@ module Caboose #:nodoc:
     #   Widget.find(:all, :with_deleted => true)
     #   # SELECT * FROM widgets
     #
+    #   Widget.find_with_deleted(1).deleted?
+    #   # Returns true if the record was previously destroyed, false if not 
+    #
     #   Widget.count
     #   # SELECT COUNT(*) FROM widgets WHERE widgets.deleted_at IS NULL
     #
@@ -72,7 +75,7 @@ module Caboose #:nodoc:
 
         module ClassMethods
           def find_with_deleted(*args)
-            options = extract_options_from_args!(args)
+            options = args.extract_options!
             validate_find_options(options)
             set_readonly_option!(options)
             options[:with_deleted] = true # yuck!
@@ -84,8 +87,12 @@ module Caboose #:nodoc:
             end
           end
 
+          def exists?(*args)
+            with_deleted_scope { exists_with_deleted?(*args) }
+          end
+
           def count_with_deleted(*args)
-            calculate_with_deleted(:count, *construct_count_options_from_legacy_args(*args))
+            calculate_with_deleted(:count, *construct_count_options_from_args(*args))
           end
 
           def count(*args)
@@ -134,6 +141,15 @@ module Caboose #:nodoc:
 
         def destroy!
           transaction { destroy_with_callbacks! }
+        end
+
+        def deleted?
+          !!read_attribute(:deleted_at)
+        end
+
+        def recover!
+          self.deleted_at = nil
+          save!
         end
       end
     end
