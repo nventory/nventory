@@ -60,7 +60,7 @@ sub _get_ua
 	if ($login && $login eq 'autoreg')
 	{
 		$cookiefile = '/root/.nventory_cookie_autoreg';
-		$password = 'qq8Erkee&T';
+		$password = 'autoreg';
 		if (! -d '/root')
 		{
 			mkdir '/root' or die "mkdir: $!";
