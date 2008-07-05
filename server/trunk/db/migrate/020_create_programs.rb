@@ -18,11 +18,9 @@ class CreatePrograms < ActiveRecord::Migration
     add_index :programs, :status_id
     add_index :programs, :name
     add_index :programs, :deleted_at
-    Program.create_versioned_table
   end
 
   def self.down
     drop_table :programs
-    Program.drop_versioned_table
   end
 end

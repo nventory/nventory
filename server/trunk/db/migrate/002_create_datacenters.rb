@@ -15,11 +15,9 @@ class CreateDatacenters < ActiveRecord::Migration
     add_index :datacenters, :id 
     add_index :datacenters, :name 
     add_index :datacenters, :deleted_at 
-    Datacenter.create_versioned_table
   end
 
   def self.down
     drop_table :datacenters
-    Datacenter.drop_versioned_table
   end
 end

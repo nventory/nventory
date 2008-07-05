@@ -1,6 +1,6 @@
 class Environment < ActiveRecord::Base
   
-  acts_as_paranoid_versioned
+  acts_as_paranoid
   
   has_one :datacenter_environment_assignment, :dependent => :destroy
   
@@ -12,6 +12,10 @@ class Environment < ActiveRecord::Base
   
   validates_presence_of :name
   
+  def self.default_search_attribute
+    'name'
+  end
+ 
   def customers
     customer_list = []
     self.programs.each { |p|

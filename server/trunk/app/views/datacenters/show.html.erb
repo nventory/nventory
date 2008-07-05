@@ -44,20 +44,20 @@
 
 <div class="relationship">
 
-<div id="datacenter_environment_assignments">
-<%= render :partial => 'environment_assignments', :locals => { :datacenter => @datacenter} %>
-</div> <!-- end datacenter_environment_assignments -->
+<div id="datacenter_vip_assignments">
+<%= render :partial => 'vip_assignments', :locals => { :datacenter => @datacenter} %>
+</div> <!-- end datacenter_vip_assignments -->
 
-<div id="create_environment_assignment">
-<%= render :partial => 'shared/create_assignment', :locals => { :from => 'datacenter', :to => 'environment'} %>
+<div id="create_vip_assignment">
+<%= render :partial => 'shared/create_assignment', :locals => { :from => 'datacenter', :to => 'vip'} %>
 </div>
 
-<p id="new_environment">
+<p id="new_vip">
 
 </p>
 
-<p id="add_environment_assignment_link">
-<%= render :partial => 'shared/add_inline_link', :locals => { :from => 'datacenter', :to => 'environment'} %>
+<p id="add_vip_assignment_link">
+<%= render :partial => 'shared/add_inline_link', :locals => { :from => 'datacenter', :to => 'vip'} %>
 </p>
 
 </div> <!-- end relationship -->
@@ -72,6 +72,6 @@
 <%= render :partial => 'shared/version_information', :locals => { :object => @datacenter} %>
 
 <%= javascript_tag "Element.hide('create_rack_assignment')" %>
-<%= javascript_tag "Element.hide('create_environment_assignment')" %>
+<%= javascript_tag "Element.hide('create_vip_assignment')" %>
 
 <%= javascript_tag "_datacenter_id = "+@datacenter.id.to_s %>

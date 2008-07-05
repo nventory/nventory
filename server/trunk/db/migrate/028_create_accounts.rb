@@ -14,18 +14,14 @@ class CreateAccounts < ActiveRecord::Migration
     add_index :accounts, :id
     add_index :accounts, :name
     add_index :accounts, :deleted_at
-    Account.create_versioned_table
-    
-    # Need to refresh column info for this object since `create_versioned_table` added some stuff
-    Account.reset_column_information
     
     # Some System Install Defaults
     Account.create(:name => 'admin', :login => 'admin', :password => 'admin', :email_address => 'admin@domain.com', :admin => true)
+    Account.create(:name => 'autoreg', :login => 'autoreg', :password => 'autoreg', :email_address => 'admin@domain.com', :admin => true)
     
   end
 
   def self.down
     drop_table :accounts
-    Account.drop_versioned_table
   end
 end

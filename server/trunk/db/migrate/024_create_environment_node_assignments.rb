@@ -13,11 +13,9 @@ class CreateEnvironmentNodeAssignments < ActiveRecord::Migration
     add_index :environment_node_assignments, :environment_id
     add_index :environment_node_assignments, :assigned_at
     add_index :environment_node_assignments, :deleted_at
-    EnvironmentNodeAssignment.create_versioned_table
   end
 
   def self.down
     drop_table :environment_node_assignments
-    EnvironmentNodeAssignment.drop_versioned_table
   end
 end

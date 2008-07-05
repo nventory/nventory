@@ -13,11 +13,9 @@ class CreateNodeDatabaseInstanceAssignments < ActiveRecord::Migration
     add_index :node_database_instance_assignments, :database_instance_id
     add_index :node_database_instance_assignments, :assigned_at
     add_index :node_database_instance_assignments, :deleted_at
-    NodeDatabaseInstanceAssignment.create_versioned_table
   end
 
   def self.down
     drop_table :node_database_instance_assignments
-    NodeDatabaseInstanceAssignment.drop_versioned_table
   end
 end

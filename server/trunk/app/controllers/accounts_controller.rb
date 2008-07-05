@@ -2,34 +2,29 @@ class AccountsController < ApplicationController
   # GET /accounts
   # GET /accounts.xml
   def index
-    sort = case @params['sort']
+    sort = case params['sort']
            when "login" then "accounts.login"
            when "login_reverse" then "accounts.login DESC"
            end
     
     # if a sort was not defined we'll make one default
     if sort.nil?
-      @params['sort'] = "login"
-      sort = "accounts.login"
+      params['sort'] = Account.default_search_attribute
+      sort = 'accounts.' + Account.default_search_attribute
     end
     
-    @objects_pages = Paginator.new self, Account.count(), DEFAULT_SEARCH_RESULT_COUNT, params[:page]
-    @objects = Account.find_by_sql(["SELECT accounts.* FROM accounts " + 
-                              " WHERE accounts.deleted_at IS NULL " +
-                              " ORDER BY #{sort} " + 
-                              " LIMIT ?,? ",
-                              @objects_pages.current.offset, @objects_pages.items_per_page])
-    
-    # NOTE: The use of #{sort} in the above string could be considered a security hole (SQL injection) if sort
-    # every becomes defineable from an external source.
-    # We use it here, because using the standard way will wrap it in single quotes and make the sql invalid
-    
+    # XML doesn't get pagination
+    if params[:format] && params[:format] == 'xml'
+      @objects = Account.find(:all, :order => sort)
+    else
+      @objects = Account.paginate(:all,
+                                  :order => sort,
+                                  :page => params[:page])
+    end
+
     respond_to do |format|
-      format.html # index.rhtml
-      format.js   { 
-        render :partial => 'shared/results_table', :locals => { :total => @total, :pages => @objects_pages, :objects => @objects }, :layout => false
-      }
-      format.xml  { render :xml => @objects.to_xml }
+      format.html # index.html.erb
+      format.xml  { render :xml => @objects.to_xml(:dasherize => false) }
     end
   end
 
@@ -39,8 +34,8 @@ class AccountsController < ApplicationController
     @account = Account.find(params[:id])
 
     respond_to do |format|
-      format.html # show.rhtml
-      format.xml  { render :xml => @account.to_xml }
+      format.html # show.html.erb
+      format.xml  { render :xml => @account.to_xml(:dasherize => false) }
     end
   end
 
@@ -66,7 +61,7 @@ class AccountsController < ApplicationController
         format.xml  { head :created, :location => account_url(@account) }
       else
         format.html { render :action => "new" }
-        format.xml  { render :xml => @account.errors.to_xml }
+        format.xml  { render :xml => @account.errors.to_xml, :status => :unprocessable_entity }
       end
     end
   end
@@ -83,7 +78,7 @@ class AccountsController < ApplicationController
         format.xml  { head :ok }
       else
         format.html { render :action => "edit" }
-        format.xml  { render :xml => @account.errors.to_xml }
+        format.xml  { render :xml => @account.errors.to_xml, :status => :unprocessable_entity }
       end
     end
   end

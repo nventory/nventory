@@ -1,6 +1,6 @@
 class DatabaseInstanceRelationship < ActiveRecord::Base
   
-  acts_as_paranoid_versioned
+  acts_as_paranoid
   
   belongs_to :from, :class_name => "DatabaseInstance", :foreign_key => "from_id"
   belongs_to :to,   :class_name => "DatabaseInstance", :foreign_key => "to_id"
@@ -11,6 +11,10 @@ class DatabaseInstanceRelationship < ActiveRecord::Base
     ['Master', 'Slave']
   end
   
+  def self.default_search_attribute
+    'name'
+  end
+ 
   def before_create 
     self.assigned_at ||= Time.now 
   end

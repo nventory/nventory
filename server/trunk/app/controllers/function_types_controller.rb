@@ -2,34 +2,29 @@ class FunctionTypesController < ApplicationController
   # GET /function_types
   # GET /function_types.xml
   def index
-    sort = case @params['sort']
+    sort = case params['sort']
            when "name" then "function_types.name"
            when "name_reverse" then "function_types.name DESC"
            end
     
     # if a sort was not defined we'll make one default
     if sort.nil?
-      @params['sort'] = "name"
-      sort = "function_types.name"
+      params['sort'] = FunctionType.default_search_attribute
+      sort = 'function_types.' + FunctionType.default_search_attribute
     end
     
-    @objects_pages = Paginator.new self, FunctionType.count(), DEFAULT_SEARCH_RESULT_COUNT, params[:page]
-    @objects = FunctionType.find_by_sql(["SELECT function_types.* FROM function_types " + 
-                              " WHERE function_types.deleted_at IS NULL " +
-                              " ORDER BY #{sort} " + 
-                              " LIMIT ?,? ",
-                              @objects_pages.current.offset, @objects_pages.items_per_page])
-    
-    # NOTE: The use of #{sort} in the above string could be considered a security hole (SQL injection) if sort
-    # every becomes defineable from an external source.
-    # We use it here, because using the standard way will wrap it in single quotes and make the sql invalid
-    
+    # XML doesn't get pagination
+    if params[:format] && params[:format] == 'xml'
+      @objects = FunctionType.find(:all, :order => sort)
+    else
+      @objects = FunctionType.paginate(:all,
+                                       :order => sort,
+                                       :page => params[:page])
+    end
+
     respond_to do |format|
-      format.html # index.rhtml
-      format.js   { 
-        render :partial => 'shared/results_table', :locals => { :total => @total, :pages => @objects_pages, :objects => @objects }, :layout => false
-      }
-      format.xml  { render :xml => @objects.to_xml }
+      format.html # index.html.erb
+      format.xml  { render :xml => @objects.to_xml(:dasherize => false) }
     end
   end
 
@@ -39,8 +34,8 @@ class FunctionTypesController < ApplicationController
     @function_type = FunctionType.find(params[:id])
 
     respond_to do |format|
-      format.html # show.rhtml
-      format.xml  { render :xml => @function_type.to_xml }
+      format.html # show.html.erb
+      format.xml  { render :xml => @function_type.to_xml(:dasherize => false) }
     end
   end
 
@@ -66,7 +61,7 @@ class FunctionTypesController < ApplicationController
         format.xml  { head :created, :location => function_type_url(@function_type) }
       else
         format.html { render :action => "new" }
-        format.xml  { render :xml => @function_type.errors.to_xml }
+        format.xml  { render :xml => @function_type.errors.to_xml, :status => :unprocessable_entity }
       end
     end
   end
@@ -83,7 +78,7 @@ class FunctionTypesController < ApplicationController
         format.xml  { head :ok }
       else
         format.html { render :action => "edit" }
-        format.xml  { render :xml => @function_type.errors.to_xml }
+        format.xml  { render :xml => @function_type.errors.to_xml, :status => :unprocessable_entity }
       end
     end
   end

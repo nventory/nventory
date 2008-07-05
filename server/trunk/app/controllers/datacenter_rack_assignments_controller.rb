@@ -2,34 +2,29 @@ class DatacenterRackAssignmentsController < ApplicationController
   # GET /datacenter_rack_assignments
   # GET /datacenter_rack_assignments.xml
   def index
-    sort = case @params['sort']
+    sort = case params['sort']
            when "assigned_at" then "datacenter_rack_assignments.assigned_at"
            when "assigned_at_reverse" then "datacenter_rack_assignments.assigned_at DESC"
            end
     
     # if a sort was not defined we'll make one default
     if sort.nil?
-      @params['sort'] = "assigned_at"
-      sort = "datacenter_rack_assignments.assigned_at"
+      params['sort'] = DatacenterRackAssignment.default_search_attribute
+      sort = 'datacenter_rack_assignments.' + DatacenterRackAssignment.default_search_attribute
     end
     
-    @objects_pages = Paginator.new self, DatacenterRackAssignment.count(), DEFAULT_SEARCH_RESULT_COUNT, params[:page]
-    @objects = DatacenterRackAssignment.find_by_sql(["SELECT datacenter_rack_assignments.* FROM datacenter_rack_assignments " + 
-                              " WHERE datacenter_rack_assignments.deleted_at IS NULL " +
-                              " ORDER BY #{sort} " + 
-                              " LIMIT ?,? ",
-                              @objects_pages.current.offset, @objects_pages.items_per_page])
-    
-    # NOTE: The use of #{sort} in the above string could be considered a security hole (SQL injection) if sort
-    # every becomes defineable from an external source.
-    # We use it here, because using the standard way will wrap it in single quotes and make the sql invalid
-    
+    # XML doesn't get pagination
+    if params[:format] && params[:format] == 'xml'
+      @objects = DatacenterRackAssignment.find(:all, :order => sort)
+    else
+      @objects = DatacenterRackAssignment.paginate(:all,
+                                                   :order => sort,
+                                                   :page => params[:page])
+    end
+
     respond_to do |format|
-      format.html # index.rhtml
-      format.js   { 
-        render :partial => 'shared/results_table', :locals => { :total => @total, :pages => @objects_pages, :objects => @objects }, :layout => false
-      }
-      format.xml  { render :xml => @objects.to_xml }
+      format.html # index.html.erb
+      format.xml  { render :xml => @objects.to_xml(:dasherize => false) }
     end
   end
 
@@ -39,8 +34,8 @@ class DatacenterRackAssignmentsController < ApplicationController
     @datacenter_rack_assignment = DatacenterRackAssignment.find_with_deleted(params[:id])
 
     respond_to do |format|
-      format.html # show.rhtml
-      format.xml  { render :xml => @datacenter_rack_assignment.to_xml }
+      format.html # show.html.erb
+      format.xml  { render :xml => @datacenter_rack_assignment.to_xml(:dasherize => false) }
     end
   end
 
@@ -77,7 +72,7 @@ class DatacenterRackAssignmentsController < ApplicationController
       else
         format.html { render :action => "new" }
         format.js   { render(:update) { |page| page.alert(@datacenter_rack_assignment.errors.full_messages) } }
-        format.xml  { render :xml => @datacenter_rack_assignment.errors.to_xml }
+        format.xml  { render :xml => @datacenter_rack_assignment.errors.to_xml, :status => :unprocessable_entity }
       end
     end
   end
@@ -94,7 +89,7 @@ class DatacenterRackAssignmentsController < ApplicationController
         format.xml  { head :ok }
       else
         format.html { render :action => "edit" }
-        format.xml  { render :xml => @datacenter_rack_assignment.errors.to_xml }
+        format.xml  { render :xml => @datacenter_rack_assignment.errors.to_xml, :status => :unprocessable_entity }
       end
     end
   end
@@ -108,7 +103,7 @@ class DatacenterRackAssignmentsController < ApplicationController
 
     respond_to do |format|
       format.html { redirect_to datacenter_rack_assignments_url }
-      format.js # will use destroy.rjs
+      format.js # will use destroy.js.rjs
       format.xml  { head :ok }
     end
   end

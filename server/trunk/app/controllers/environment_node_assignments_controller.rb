@@ -2,34 +2,29 @@ class EnvironmentNodeAssignmentsController < ApplicationController
   # GET /environment_node_assignments
   # GET /environment_node_assignments.xml
   def index
-    sort = case @params['sort']
+    sort = case params['sort']
            when "assigned_at" then "environment_node_assignments.assigned_at"
            when "assigned_at_reverse" then "environment_node_assignments.assigned_at DESC"
            end
     
     # if a sort was not defined we'll make one default
     if sort.nil?
-      @params['sort'] = "assigned_at"
-      sort = "environment_node_assignments.assigned_at"
+      params['sort'] = EnvironmentNodeAssignment.default_search_attribute
+      sort = 'environment_node_assignments.' + EnvironmentNodeAssignment.default_search_attribute
     end
     
-    @objects_pages = Paginator.new self, EnvironmentNodeAssignment.count(), DEFAULT_SEARCH_RESULT_COUNT, params[:page]
-    @objects = EnvironmentNodeAssignment.find_by_sql(["SELECT environment_node_assignments.* FROM environment_node_assignments " + 
-                              " WHERE environment_node_assignments.deleted_at IS NULL " +
-                              " ORDER BY #{sort} " + 
-                              " LIMIT ?,? ",
-                              @objects_pages.current.offset, @objects_pages.items_per_page])
-    
-    # NOTE: The use of #{sort} in the above string could be considered a security hole (SQL injection) if sort
-    # every becomes defineable from an external source.
-    # We use it here, because using the standard way will wrap it in single quotes and make the sql invalid
-    
+    # XML doesn't get pagination
+    if params[:format] && params[:format] == 'xml'
+      @objects = EnvironmentNodeAssignment.find(:all, :order => sort)
+    else
+      @objects = EnvironmentNodeAssignment.paginate(:all,
+                                                    :order => sort,
+                                                    :page => params[:page])
+    end
+
     respond_to do |format|
-      format.html # index.rhtml
-      format.js   { 
-        render :partial => 'shared/results_table', :locals => { :total => @total, :pages => @objects_pages, :objects => @objects }, :layout => false
-      }
-      format.xml  { render :xml => @objects.to_xml }
+      format.html # index.html.erb
+      format.xml  { render :xml => @objects.to_xml(:dasherize => false) }
     end
   end
 
@@ -39,8 +34,8 @@ class EnvironmentNodeAssignmentsController < ApplicationController
     @environment_node_assignment = EnvironmentNodeAssignment.find(params[:id])
 
     respond_to do |format|
-      format.html # show.rhtml
-      format.xml  { render :xml => @environment_node_assignment.to_xml }
+      format.html # show.html.erb
+      format.xml  { render :xml => @environment_node_assignment.to_xml(:dasherize => false) }
     end
   end
 
@@ -76,7 +71,7 @@ class EnvironmentNodeAssignmentsController < ApplicationController
       else
         format.html { render :action => "new" }
         format.js   { render(:update) { |page| page.alert(@environment_node_assignment.errors.full_messages) } }
-        format.xml  { render :xml => @environment_node_assignment.errors.to_xml }
+        format.xml  { render :xml => @environment_node_assignment.errors.to_xml, :status => :unprocessable_entity }
       end
     end
   end
@@ -94,7 +89,7 @@ class EnvironmentNodeAssignmentsController < ApplicationController
         format.xml  { head :ok }
       else
         format.html { render :action => "edit" }
-        format.xml  { render :xml => @environment_node_assignment.errors.to_xml }
+        format.xml  { render :xml => @environment_node_assignment.errors.to_xml, :status => :unprocessable_entity }
       end
     end
   end

@@ -10,11 +10,9 @@ class CreateDatabaseInstances < ActiveRecord::Migration
     add_index :database_instances, :id
     add_index :database_instances, :name
     add_index :database_instances, :deleted_at
-    DatabaseInstance.create_versioned_table
   end
 
   def self.down
     drop_table :database_instances
-    DatabaseInstance.drop_versioned_table
   end
 end

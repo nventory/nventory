@@ -15,11 +15,9 @@ class CreateDatabaseInstanceRelationships < ActiveRecord::Migration
     add_index :database_instance_relationships, :to_id
     add_index :database_instance_relationships, :assigned_at
     add_index :database_instance_relationships, :deleted_at
-    DatabaseInstanceRelationship.create_versioned_table
   end
 
   def self.down
     drop_table :database_instance_relationships
-    DatabaseInstanceRelationship.drop_versioned_table
   end
 end

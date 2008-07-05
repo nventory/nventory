@@ -10,11 +10,9 @@ class CreateCustomers < ActiveRecord::Migration
     add_index :customers, :id
     add_index :customers, :name
     add_index :customers, :deleted_at
-    Customer.create_versioned_table
   end
 
   def self.down
     drop_table :customers
-    Customer.drop_versioned_table
   end
 end

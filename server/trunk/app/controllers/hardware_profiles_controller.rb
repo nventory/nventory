@@ -2,34 +2,29 @@ class HardwareProfilesController < ApplicationController
   # GET /hardware_profiles
   # GET /hardware_profiles.xml
   def index
-    sort = case @params['sort']
+    sort = case params['sort']
            when "name" then "hardware_profiles.name"
            when "name_reverse" then "hardware_profiles.name DESC"
            end
     
     # if a sort was not defined we'll make one default
     if sort.nil?
-      @params['sort'] = "name"
-      sort = "hardware_profiles.name"
+      params['sort'] = HardwareProfile.default_search_attribute
+      sort = 'hardware_profiles.' + HardwareProfile.default_search_attribute
     end
     
-    @objects_pages = Paginator.new self, HardwareProfile.count(), DEFAULT_SEARCH_RESULT_COUNT, params[:page]
-    @objects = HardwareProfile.find_by_sql(["SELECT hardware_profiles.* FROM hardware_profiles " + 
-                              " WHERE hardware_profiles.deleted_at IS NULL " +
-                              " ORDER BY #{sort} " + 
-                              " LIMIT ?,? ",
-                              @objects_pages.current.offset, @objects_pages.items_per_page])
-    
-    # NOTE: The use of #{sort} in the above string could be considered a security hole (SQL injection) if sort
-    # every becomes defineable from an external source.
-    # We use it here, because using the standard way will wrap it in single quotes and make the sql invalid
-    
+    # XML doesn't get pagination
+    if params[:format] && params[:format] == 'xml'
+      @objects = HardwareProfile.find(:all, :order => sort)
+    else
+      @objects = HardwareProfile.paginate(:all,
+                                          :order => sort,
+                                          :page => params[:page])
+    end
+
     respond_to do |format|
-      format.html # index.rhtml
-      format.js   { 
-        render :partial => 'shared/results_table', :locals => { :total => @total, :pages => @objects_pages, :objects => @objects }, :layout => false
-      }
-      format.xml  { render :xml => @objects.to_xml }
+      format.html # index.html.erb
+      format.xml  { render :xml => @objects.to_xml(:dasherize => false) }
     end
   end
 
@@ -39,8 +34,8 @@ class HardwareProfilesController < ApplicationController
     @hardware_profile = HardwareProfile.find(params[:id])
 
     respond_to do |format|
-      format.html # show.rhtml
-      format.xml  { render :xml => @hardware_profile.to_xml }
+      format.html # show.html.erb
+      format.xml  { render :xml => @hardware_profile.to_xml(:dasherize => false) }
     end
   end
 
@@ -66,7 +61,7 @@ class HardwareProfilesController < ApplicationController
         format.xml  { head :created, :location => hardware_profile_url(@hardware_profile) }
       else
         format.html { render :action => "new" }
-        format.xml  { render :xml => @hardware_profile.errors.to_xml }
+        format.xml  { render :xml => @hardware_profile.errors.to_xml, :status => :unprocessable_entity }
       end
     end
   end
@@ -83,7 +78,7 @@ class HardwareProfilesController < ApplicationController
         format.xml  { head :ok }
       else
         format.html { render :action => "edit" }
-        format.xml  { render :xml => @hardware_profile.errors.to_xml }
+        format.xml  { render :xml => @hardware_profile.errors.to_xml, :status => :unprocessable_entity }
       end
     end
   end

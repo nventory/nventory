@@ -9,6 +9,21 @@
 <p><strong>Vendor:</strong> <%=h @operating_system.vendor %><br />
 <strong>Variant:</strong> <%=h @operating_system.variant %><br />
 <strong>Version Number:</strong> <%=h @operating_system.version_number %></p>
+<strong>Architecture:</strong> <%=h @operating_system.architecture %></p>
+
+<p><strong>Description:</strong><br />
+<%= textilize_without_paragraph(h(@operating_system.description)) %></p>
+
+<p><strong>Notes:</strong></p>
+<%- if @operating_system.operating_system_notes.length > 0 -%>
+<ul>
+<%- @operating_system.operating_system_notes.each do |note| %>
+<li><%= h(note.created_at) %>: <%= h(note.note) %></li>
+<%- end -%>
+</ul>
+<%- else -%>
+<p>This operating system does not have any notes.</p>
+<%- end -%>
 
 <p class="metadata"><strong>Created at:</strong> <%= h(@operating_system.created_at) %><br />
 <strong>Updated at:</strong> <%= h(@operating_system.updated_at) %></p>

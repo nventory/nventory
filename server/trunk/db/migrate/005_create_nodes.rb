@@ -11,11 +11,9 @@ class CreateNodes < ActiveRecord::Migration
     add_index :nodes, :name
     add_index :nodes, :serial_number
     add_index :nodes, :deleted_at
-    Node.create_versioned_table
   end
 
   def self.down
     drop_table :nodes
-    Node.drop_versioned_table
   end
 end

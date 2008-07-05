@@ -12,11 +12,9 @@ class CreateFunctions < ActiveRecord::Migration
     add_index :functions, :name
     add_index :functions, :deleted_at
     add_index :functions, :function_type_id
-    Function.create_versioned_table
   end
 
   def self.down
     drop_table :functions
-    Function.drop_versioned_table
   end
 end

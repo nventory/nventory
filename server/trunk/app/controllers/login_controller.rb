@@ -1,5 +1,9 @@
 class LoginController < ApplicationController
-  
+  # Ensure that login activity occurs over SSL since the user is
+  # transmitting his password to us.  This functionality courtesy of
+  # the ssl_requirement plugin, which is enabled in application.rb
+  #ssl_required :login
+
   def index
     redirect_to :action => "login"
   end

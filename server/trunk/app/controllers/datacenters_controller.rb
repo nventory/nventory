@@ -2,35 +2,29 @@ class DatacentersController < ApplicationController
   # GET /datacenters
   # GET /datacenters.xml
   def index
-    
-    sort = case @params['sort']
+    sort = case params['sort']
            when "name" then "datacenters.name"
            when "name_reverse" then "datacenters.name DESC"
            end
     
     # if a sort was not defined we'll make one default
     if sort.nil?
-      @params['sort'] = "name"
-      sort = "datacenters.name"
+      params['sort'] = Datacenter.default_search_attribute
+      sort = 'datacenters.' + Datacenter.default_search_attribute
     end
     
-    @objects_pages = Paginator.new self, Datacenter.count(), DEFAULT_SEARCH_RESULT_COUNT, params[:page]
-    @objects = Datacenter.find_by_sql(["SELECT datacenters.* FROM datacenters " + 
-                              " WHERE datacenters.deleted_at IS NULL " +
-                              " ORDER BY #{sort} " + 
-                              " LIMIT ?,? ",
-                              @objects_pages.current.offset, @objects_pages.items_per_page])
-    
-    # NOTE: The use of #{sort} in the above string could be considered a security hole (SQL injection) if sort
-    # every becomes defineable from an external source.
-    # We use it here, because using the standard way will wrap it in single quotes and make the sql invalid
-    
+    # XML doesn't get pagination
+    if params[:format] && params[:format] == 'xml'
+      @objects = Datacenter.find(:all, :order => sort)
+    else
+      @objects = Datacenter.paginate(:all,
+                                     :order => sort,
+                                     :page => params[:page])
+    end
+
     respond_to do |format|
-      format.html # index.rhtml
-      format.js   { 
-        render :partial => 'shared/results_table', :locals => { :total => @total, :pages => @objects_pages, :objects => @objects }, :layout => false
-      }
-      format.xml  { render :xml => @objects.to_xml }
+      format.html # index.html.erb
+      format.xml  { render :xml => @objects.to_xml(:dasherize => false) }
     end
     
   end
@@ -41,8 +35,8 @@ class DatacentersController < ApplicationController
     @datacenter = Datacenter.find_with_deleted(params[:id])
 
     respond_to do |format|
-      format.html # show.rhtml
-      format.xml  { render :xml => @datacenter.to_xml }
+      format.html # show.html.erb
+      format.xml  { render :xml => @datacenter.to_xml(:dasherize => false) }
     end
   end
 
@@ -68,7 +62,7 @@ class DatacentersController < ApplicationController
         format.xml  { head :created, :location => datacenter_url(@datacenter) }
       else
         format.html { render :action => "new" }
-        format.xml  { render :xml => @datacenter.errors.to_xml }
+        format.xml  { render :xml => @datacenter.errors.to_xml, :status => :unprocessable_entity }
       end
     end
   end
@@ -85,7 +79,7 @@ class DatacentersController < ApplicationController
         format.xml  { head :ok }
       else
         format.html { render :action => "edit" }
-        format.xml  { render :xml => @datacenter.errors.to_xml }
+        format.xml  { render :xml => @datacenter.errors.to_xml, :status => :unprocessable_entity }
       end
     end
   end

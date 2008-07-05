@@ -13,11 +13,9 @@ class CreateOutlets < ActiveRecord::Migration
     add_index :outlets, :producer_id
     add_index :outlets, :consumer_id
     add_index :outlets, :deleted_at
-    Outlet.create_versioned_table
   end
 
   def self.down
     drop_table :outlets
-    Outlet.drop_versioned_table
   end
 end

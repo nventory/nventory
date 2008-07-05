@@ -5,7 +5,7 @@
 # ENV['RAILS_ENV'] ||= 'production'
 
 # Specifies gem version of Rails to use when vendor/rails is not present
-RAILS_GEM_VERSION = '1.2.3' unless defined? RAILS_GEM_VERSION
+RAILS_GEM_VERSION = '2.0.2' unless defined? RAILS_GEM_VERSION
 
 # Bootstrap the Rails environment, frameworks, and default configuration
 require File.join(File.dirname(__FILE__), 'boot')
@@ -28,7 +28,7 @@ Rails::Initializer.run do |config|
 
   # Use the database for sessions instead of the file system
   # (create the session table with 'rake db:sessions:create')
-  # config.action_controller.session_store = :active_record_store
+  config.action_controller.session_store = :active_record_store
 
   # Use SQL instead of Active Record's schema dumper when creating the test database.
   # This is necessary if your schema can't be completely dumped by the schema dumper, 
@@ -59,24 +59,6 @@ end
 
 # Include your application configuration below
 
-# Add custom acts_as_paranoid_versioned
-module ActiveRecord
-   module Acts
-     module Versioned
-       module ClassMethods
-         def acts_as_paranoid_versioned
-           acts_as_paranoid
-           acts_as_versioned
-           # protect the versioned model
-           self.versioned_class.class_eval do
-             def self.delete_all(conditions = nil); return; end
-           end
-         end
-       end
-     end
-   end
-end
-
 # some constants we use when highlighting a dom object inside of a relationship section of the page
 RELATIONSHIP_HIGHLIGHT_START_COLOR = '#FF8A00'
 RELATIONSHIP_HIGHLIGHT_END_COLOR = '#FFF4E6'
@@ -90,3 +72,8 @@ ActiveSupport::CoreExtensions::Time::Conversions::DATE_FORMATS.merge!(
 )
 
 Mime::Type.register "text/config", :config
+
+# Email receipients for the exception_notification plugin
+ExceptionNotifier.exception_recipients = %w(webmaster)
+
+require 'will_paginate'

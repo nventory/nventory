@@ -7,64 +7,97 @@
 <h1>Node: <%=h @node.name %></h1>
 
 <p><strong>Status:</strong> <%= link_to h(@node.status.name), status_url(@node.status) %><br />
-<strong>Serial Number:</strong> <%= h(@node.serial_number) %><br />
-<strong>IP Addresses:</strong> <%= h(@node.ipaddresses_as_string_list) %><br />
+
 <strong>Hardware Profile:</strong> <%= link_to h(@node.hardware_profile.name), hardware_profile_url(@node.hardware_profile) %><br />
+
+<strong>Serial Number:</strong> <%= h(@node.serial_number) %><br />
+<strong>Unique ID:</strong> <%= h(@node.uniqueid) %><br />
+
+<strong>Processor manufacturer:</strong> <%=h @node.processor_manufacturer %><br />
+<strong>Processor model:</strong> <%=h @node.processor_model %><br />
+<strong>Processor speed:</strong> <%=h @node.processor_speed %><br />
+<strong>Processor socket count:</strong> <%=h @node.processor_socket_count %><br />
+<strong>Processor count:</strong> <%=h @node.processor_count %><br />
+<strong>Processor core count:</strong> <%=h @node.processor_core_count %><br />
+<strong>OS processor count:</strong> <%=h @node.os_processor_count %><br />
+
+<strong>Physical memory:</strong> <%=h @node.physical_memory %><br />
+<strong>Physical memory sizes:</strong> <%=h @node.physical_memory_sizes %><br />
+<strong>OS memory:</strong> <%=h @node.os_memory %><br />
+<strong>Swap:</strong> <%=h @node.swap %><br />
+
+<strong>Power supply count:</strong> <%=h @node.power_supply_count %><br />
+
+<strong>Console type:</strong> <%=h @node.console_type %><br />
 
 <strong>Operating System:</strong> 
 <%- if @node.operating_system -%>
   <%= link_to h(@node.operating_system.name), operating_system_url(@node.operating_system) %>
 <%- end -%>
+<br />
+<strong>Preferred Operating System:</strong> 
+<%- if @node.preferred_operating_system -%>
+  <%= link_to h(@node.preferred_operating_system.name), operating_system_url(@node.preferred_operating_system) %>
+<%- end -%>
+<br />
+
+<strong>Kernel version:</strong> <%=h @node.kernel_version %><br />
+
+<p>
+<strong>NICs:</strong>
+<ul>
+<%- @node.network_interfaces.each do |nic| -%>
+  <li><%= link_to nic.name, network_interface_url(nic) %></li>
+  <ul>
+  <%- nic.ip_addresses.each do |ip| -%>
+    <li><%= link_to ip.address, ip_address_url(ip) %></li>
+  <%- end -%>
+  </ul>
+<%- end -%>
+</ul>
 </p>
+
+<p><strong>Description:</strong><br />
+<%= textilize_without_paragraph(h(@node.description)) %></p>
+
+<p><strong>Notes:</strong></p>
+<%- if @node.node_notes.length > 0 -%>
+<ul>
+<%- @node.node_notes.each do |note| %>
+<li><%= h(note.created_at) %>: <%= h(note.note) %></li>
+<%- end -%>
+</ul>
+<%- else -%>
+<p>This node does not have any notes.</p>
+<%- end -%>
+
 
 <p class="metadata"><strong>Created at:</strong> <%= h(@node.created_at) %><br />
 <strong>Updated at:</strong> <%= h(@node.updated_at) %></p>
 
 <div class="relationship">
 
-<div id="node_function_assignments">
-<%= render :partial => 'function_assignments', :locals => { :node => @node} %>
-</div> <!-- end rack_node_assignments -->
-
-<div id="create_function_assignment">
-<%= render :partial => 'shared/create_assignment', :locals => { :from => 'node', :to => 'function'} %>
+<div id="node_group_node_assignments">
+<%= render :partial => 'node_group_node_assignments', :locals => { :node => @node} %>
 </div>
 
-<p id="new_function">
+<div id="create_node_group_node_assignment">
+<%= render :partial => 'shared/create_assignment', :locals => { :from => 'node_group', :to => 'node'} %>
+</div>
+
+<p id="new_node_group">
 
 </p>
 
-<p id="add_function_assignment_link">
-<%= render :partial => 'shared/add_inline_link', :locals => { :from => 'node', :to => 'function'} %>
+<p id="add_node_group_node_assignment_link">
+<%= render :partial => 'shared/add_inline_link', :locals => { :from => 'node_group', :to => 'node'} %>
 </p>
 
 </div> <!-- end relationship -->
 
 
 
-<%- if @node.is_database_server? -%>
-<div class="relationship">
-<div id="node_database_instance_assignments">
-<%= render :partial => 'database_instance_assignments', :locals => { :node => @node} %>
-</div> <!-- end rack_node_assignments -->
-
-<div id="create_database_instance_assignment">
-<%= render :partial => 'shared/create_assignment', :locals => { :from => 'node', :to => 'database_instance'} %>
-</div>
-
-<p id="new_database_instance">
-
-</p>
-
-<p id="add_database_instance_assignment_link">
-<%= render :partial => 'shared/add_inline_link', :locals => { :from => 'node', :to => 'database_instance'} %>
-</p>
-</div> <!-- end relationship -->
-<%- end -%>
-
-
-
-<%- if @node.hardware_profile.outlet_count > 0 and @node.produced_outlets.count > 0 -%>
+<%- if !@node.hardware_profile.outlet_count.nil? and @node.hardware_profile.outlet_count > 0 and @node.produced_outlets.count > 0 -%>
 <div class="relationship">
   <table cellspacing="0" class="styled" summary="A list of the outlets supplied by this node.">
   <caption><%= @node.hardware_profile.outlet_type %> Outlets</caption>
@@ -102,21 +135,11 @@
 <p>This node is located in rack: <%= link_to h(@node.rack_node_assignment.rack.name), rack_path(@node.rack_node_assignment.rack) %>.</p>
 <%- end -%>
 
-<%- if @node.environment_node_assignments.count > 0 -%>
-<p>This node is located in the following environments: 
-<%- i = 0 -%>
-<%- @node.environment_node_assignments.each do |assignment| -%>
-  <%= link_to assignment.environment.name, environment_path(assignment.environment) %><%- i = i + 1 -%><%- if @node.environment_node_assignments.count > i -%>,<%- end -%>
-<%- end -%>
-<%- else -%>
-<p>This node is not in an environment.</p>
-<%- end -%>
-
-<%- if @node.hardware_profile.nics > 0 -%>
-<p>This node has <%= h(@node.hardware_profile.nics.to_s) %> NICS that consume bandwidth. Connected producers are:</p>
+<%- if @node.number_of_physical_nics > 0 -%>
+<p>This node has <%= h(@node.number_of_physical_nics.to_s) %> NICS that consume bandwidth. Connected producers are:</p>
 <ul>
 <%- i = 0 -%>
-<%- @node.hardware_profile.nics.times do -%>
+<%- @node.number_of_physical_nics.times do -%>
 <li>#<%= i.to_s %>: <%= !@node.consumed_network_outlets.at(i).nil? ? link_to(@node.consumed_network_outlets.at(i).producer.name, node_path(@node.consumed_network_outlets.at(i).producer)) : 'n/a' %></li>
 <%- i = i + 1 -%>
 <%- end -%>
@@ -125,12 +148,12 @@
 <p>This node is does not have any NICS that consume bandwidth.</p>
 <%- end -%>
 
-<%- if @node.hardware_profile.power_supply_count > 0 -%>
-<p>This node has <%= h(@node.hardware_profile.power_supply_count.to_s) %> power supplies that consume electricity. Connected producers are:</p>
+<%- if @node.number_of_power_supplies > 0 -%>
+<p>This node has <%= h(@node.number_of_power_supplies.to_s) %> power supplies that consume electricity. Connected producers are:</p>
 
 <ul>
 <%- i = 0 -%>
-<%- @node.hardware_profile.power_supply_count.times do -%>
+<%- @node.number_of_power_supplies.times do -%>
 <li>#<%= i.to_s %>: <%= !@node.consumed_power_outlets.at(i).nil? ? link_to(@node.consumed_power_outlets.at(i).producer.name, node_path(@node.consumed_power_outlets.at(i).producer)) : 'n/a' %></li>
 <%- i = i + 1 -%>
 <%- end -%>
@@ -140,6 +163,17 @@
 <%- else -%>
 <p>This node is does not have any power supplies that consume power.</p>
 <%- end -%>
+
+<p>Serial console connected to:</p>
+
+<ul>
+<%- i = 0 -%>
+<%- 1.times do -%>
+<li>#<%= i.to_s %>: <%= !@node.consumed_console_outlets.at(i).nil? ?  link_to(@node.consumed_console_outlets.at(i).producer.name, node_path(@node.consumed_console_outlets.at(i).producer)) : 'n/a' %></li>
+<%- i = i + 1 -%>
+<%- end -%>
+</ul>
+
 </div> <!-- end smartrelationship -->
 
 </div>
@@ -151,7 +185,6 @@
 
 <%= render :partial => 'shared/version_information', :locals => { :object => @node} %>
 
-<%= javascript_tag "Element.hide('create_function_assignment')" %>
-<%= javascript_tag "Element.hide('create_database_instance_assignment')" %>
+<%= javascript_tag "Element.hide('create_node_group_node_assignment')" %>
 
 <%= javascript_tag "_node_id = "+@node.id.to_s %>

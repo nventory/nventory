@@ -1,4 +1,4 @@
-<%- @page_title = "Dashboad" %>
+<%- @page_title = "Dashboard" %>
 
 <div id="dashboard_menu">
 
@@ -7,24 +7,9 @@
   <li><%= link_to 'Add New Node', new_node_path %></li>
   <li><%= link_to 'Add New Hardware Profile', new_hardware_profile_path %></li>
   <li><%= link_to 'View All Nodes', nodes_path %></li>
-  <li><%= dashboard_pulldown_form_for_model(Node, HardwareProfile.find(:all)) %></li>
-  <li><%= dashboard_pulldown_form_for_model(Node, Customer.find(:all)) %></li>
-  <li><%= dashboard_pulldown_form_for_model(Node, Function.find(:all)) %></li>
-  <li><%= dashboard_pulldown_form_for_model(Node, Status.find(:all, :conditions => "relevant_model = 'Node'")) %></li>
-</ul>
-
-<h3>Customers</h3>
-<ul>
-  <li><%= link_to 'Add New Customer', new_customer_path %></li>
-  <li><%= link_to 'View All Customers', customers_path %></li>
-  <li>
-    <form action="" method="get">
-      &nbsp;&nbsp;&nbsp;<select style="width:20em;" id="customer" name="" onchange="if (this.value != '') { window.location = '/customers/' + $('customer').value; }">
-        <option value="">View Customer:</option>
-        <%= options_from_collection_for_select(Customer.find(:all), 'id', 'name') %>
-      </select>
-    </form>
-  </li>
+  <li><%= dashboard_pulldown_form_for_model(Node, HardwareProfile.find(:all, :order => HardwareProfile.default_search_attribute)) %></li>
+  <li><%= dashboard_pulldown_form_for_model(Node, OperatingSystem.find(:all, :order => OperatingSystem.default_search_attribute)) %></li>
+  <li><%= dashboard_pulldown_form_for_model(Node, Status.find(:all, :conditions => "relevant_model = 'Node'", :order => Status.default_search_attribute)) %></li>
 </ul>
 
 <h3>Datacenters</h3>
@@ -55,40 +40,12 @@
       Datacenters: <%= Datacenter.find(:all).length %><br/>
       Racks: <%= Rack.find(:all).length %><br/>
       Nodes: <%= Node.find(:all).length %><br/>
-    </td>
-    <td valign="top">
-      <%- @function_type_counts.each_key do |key| -%>
-      <%= key.name %>: <%= @function_type_counts[key] %><br />
-      <%- end -%>
+      VIPs: <%= Vip.find(:all).length %><br/>
     </td>
 </tr>
 </tbody>
 </table>
 
-
-<table class="network_summary">
-<caption>Customer Summary</caption>
-<tbody>
-<%- column_count = 2 -%>
-<%- customers = Customer.find(:all) -%>
-<%- row_count = (customers.length / column_count).to_i + 1 -%>
-<%- customer_index = 0 -%>
-<%- row_count.times do -%>
-<tr>
-  <%- column_count.times do -%>
-    <td valign="top">
-    <%- if customer_index < Customer.count -%>
-      <%= render :partial => 'customer_summary', :locals => { :customer => customers.fetch(customer_index) } %>
-    <%- else -%>
-    &nbsp;
-    <%- end -%>
-    </td>
-  <%- customer_index = customer_index + 1 -%>
-  <%- end -%>
-</tr>
-<%- end -%>
-</tbody>
-</table>
 
 </div>
 

@@ -1,11 +1,15 @@
 class Customer < ActiveRecord::Base
   
-  acts_as_paranoid_versioned
+  acts_as_paranoid
   
   has_many :programs
   
   validates_presence_of :name
   
+  def self.default_search_attribute
+    'name'
+  end
+ 
   def environments  
     elist = []
     self.programs.each do |p|

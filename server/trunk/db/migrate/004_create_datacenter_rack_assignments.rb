@@ -13,12 +13,10 @@ class CreateDatacenterRackAssignments < ActiveRecord::Migration
     add_index :datacenter_rack_assignments, :rack_id
     add_index :datacenter_rack_assignments, :assigned_at
     add_index :datacenter_rack_assignments, :deleted_at
-    DatacenterRackAssignment.create_versioned_table
   end
 
   def self.down
     drop_table :datacenter_rack_assignments
-    DatacenterRackAssignment.drop_versioned_table
   end
   
 end

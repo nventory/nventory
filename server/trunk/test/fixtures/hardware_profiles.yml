@@ -3,25 +3,37 @@ one:
   id: 1
   name: MyString
   manufacturer: MyString
+  model: MyString
   rack_size: 1
   memory: MyString
   disk: MyString
   nics: MyString
-  processor_type: MyString
+  processor_manufacturer: MyString
+  processor_model: MyString
   processor_speed: MyString
+  processor_socket_count: 1
   processor_count: 1
+  power_supply_slot_count: 1
+  power_supply_count: 1
+  power_consumption: 1
   cards: MyString
-  notes: MyText
+  description: MyText
 two:
   id: 2
   name: MyString
   manufacturer: MyString
+  model: MyString
   rack_size: 1
   memory: MyString
   disk: MyString
   nics: MyString
-  processor_type: MyString
+  processor_manufacturer: MyString
+  processor_model: MyString
   processor_speed: MyString
+  processor_socket_count: 1
   processor_count: 1
+  power_supply_slot_count: 1
+  power_supply_count: 1
+  power_consumption: 1
   cards: MyString
-  notes: MyText
+  description: MyText

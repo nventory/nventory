@@ -13,11 +13,9 @@ class CreateEnvironmentProgramAssignments < ActiveRecord::Migration
     add_index :environment_program_assignments, :environment_id
     add_index :environment_program_assignments, :assigned_at
     add_index :environment_program_assignments, :deleted_at
-    EnvironmentProgramAssignment.create_versioned_table
   end
 
   def self.down
     drop_table :environment_program_assignments
-    EnvironmentProgramAssignment.drop_versioned_table
   end
 end

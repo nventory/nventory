@@ -21,12 +21,9 @@ class CreateHardwareProfiles < ActiveRecord::Migration
     add_index :hardware_profiles, :id
     add_index :hardware_profiles, :name
     add_index :hardware_profiles, :deleted_at
-
-    HardwareProfile.create_versioned_table
     
     # add a column to node so it can have a hardware profile
     add_column "nodes", "hardware_profile_id", :integer
-    add_column "node_versions", "hardware_profile_id", :integer
     
     add_index :nodes, :hardware_profile_id
     
@@ -34,8 +31,6 @@ class CreateHardwareProfiles < ActiveRecord::Migration
 
   def self.down
     drop_table :hardware_profiles
-    HardwareProfile.drop_versioned_table
     remove_column "nodes", "hardware_profile_id"
-    remove_column "node_versions", "hardware_profile_id"
   end
 end

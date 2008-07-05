@@ -11,44 +11,30 @@ module ApplicationHelper
     class_from_record_or_class(record_or_class).name.underscore.tr('/', '_')
   end
   
-  def pagination_links_remote(paginator)
-    page_options = {:window_size => 2}
-    pagination_links_each(paginator, page_options) do |n|
-      options = {
-        :url => {:params => @params.merge({:page => n})},
-        :update => 'results_table',
-        :method => :get
-      }
-      html_options = {:href => url_for(:action => 'index', :params => @params.merge({:page => n}))}
-      link_to_remote(n.to_s, options, html_options)
-    end
-  end
-  
   def sort_td_class_helper(param)
-    result = 'class="sortup"' if @params[:sort] == param
-    result = 'class="sortdown"' if @params[:sort] == param + "_reverse"
+    result = 'class="sortup"' if params[:sort] == param
+    result = 'class="sortdown"' if params[:sort] == param + "_reverse"
     return result
   end
   
   def sort_link_helper(text, param)
     key = param
-    key += "_reverse" if @params[:sort] == param
+    key += "_reverse" if params[:sort] == param
     options = {
-        :url => {:action => 'index', :params => @params.merge({:sort => key, :page => nil})},
-        :update => 'results_table',
+        :url => {:action => 'index', :params => params.merge({:sort => key, :page => nil})},
         :method => :get
     }
     html_options = {
       :title => "Sort by this field",
-      :href => url_for(:action => 'index', :params => @params.merge({:sort => key, :page => nil}))
+      :href => url_for(:action => 'index', :params => params.merge({:sort => key, :page => nil}))
     }
-    link_to_remote(text, options, html_options)
+    link_to(text, options, html_options)
   end  
   
   def dashboard_pulldown_form_for_model(search_class, collection)
     model_class = collection.first.class
     return '<form action="' + search_class.to_s.tableize + '" method="get">' +
-    '&nbsp;&nbsp;&nbsp;<select style="width:20em;" id="searchquery_'+model_class.to_s.underscore+'" name="searchquery_'+model_class.to_s.underscore+'" onchange="if (this.value != \'\') this.form.submit();">' +
+    '&nbsp;&nbsp;&nbsp;<select style="width:20em;" id="'+model_class.to_s.underscore+'" name="'+model_class.to_s.underscore+'" onchange="if (this.value != \'\') this.form.submit();">' +
     '<option value="">By: ' + model_class.to_s.underscore.titleize + '</option>' +
     options_from_collection_for_select(collection, 'name', 'name') +
     '</select>' +

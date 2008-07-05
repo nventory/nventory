@@ -2,7 +2,7 @@ class DatabaseInstanceRelationshipsController < ApplicationController
   # GET /database_instance_relationships
   # GET /database_instance_relationships.xml
   def index
-    sort = case @params['sort']
+    sort = case params['sort']
            when "name" then "database_instance_relationships.name"
            when "name_reverse" then "database_instance_relationships.name DESC"
            when "assigned_at" then "database_instance_relationships.assigned_at"
@@ -11,27 +11,22 @@ class DatabaseInstanceRelationshipsController < ApplicationController
     
     # if a sort was not defined we'll make one default
     if sort.nil?
-      @params['sort'] = "name"
-      sort = "database_instance_relationships.name"
+      params['sort'] = DatabaseInstanceRelationship.default_search_attribute
+      sort = 'database_instance_relationships.' + DatabaseInstanceRelationship.default_search_attribute
     end
     
-    @objects_pages = Paginator.new self, DatabaseInstanceRelationship.count(), DEFAULT_SEARCH_RESULT_COUNT, params[:page]
-    @objects = DatabaseInstanceRelationship.find_by_sql(["SELECT database_instance_relationships.* FROM database_instance_relationships " + 
-                              " WHERE database_instance_relationships.deleted_at IS NULL " +
-                              " ORDER BY #{sort} " + 
-                              " LIMIT ?,? ",
-                              @objects_pages.current.offset, @objects_pages.items_per_page])
-    
-    # NOTE: The use of #{sort} in the above string could be considered a security hole (SQL injection) if sort
-    # every becomes defineable from an external source.
-    # We use it here, because using the standard way will wrap it in single quotes and make the sql invalid
-    
+    # XML doesn't get pagination
+    if params[:format] && params[:format] == 'xml'
+      @objects = DatabaseInstanceRelationship.find(:all, :order => sort)
+    else
+      @objects = DatabaseInstanceRelationship.paginate(:all,
+                                                       :order => sort,
+                                                       :page => params[:page])
+    end
+
     respond_to do |format|
-      format.html # index.rhtml
-      format.js   { 
-        render :partial => 'shared/results_table', :locals => { :total => @total, :pages => @objects_pages, :objects => @objects }, :layout => false
-      }
-      format.xml  { render :xml => @objects.to_xml }
+      format.html # index.html.erb
+      format.xml  { render :xml => @objects.to_xml(:dasherize => false) }
     end
   end
   
@@ -43,8 +38,8 @@ class DatabaseInstanceRelationshipsController < ApplicationController
     @database_instance_relationship = DatabaseInstanceRelationship.find(params[:id])
 
     respond_to do |format|
-      format.html # show.rhtml
-      format.xml  { render :xml => @database_instance_relationship.to_xml }
+      format.html # show.html.erb
+      format.xml  { render :xml => @database_instance_relationship.to_xml(:dasherize => false) }
     end
   end
 
@@ -70,7 +65,7 @@ class DatabaseInstanceRelationshipsController < ApplicationController
         format.xml  { head :created, :location => database_instance_relationship_url(@database_instance_relationship) }
       else
         format.html { render :action => "new" }
-        format.xml  { render :xml => @database_instance_relationship.errors.to_xml }
+        format.xml  { render :xml => @database_instance_relationship.errors.to_xml, :status => :unprocessable_entity }
       end
     end
   end
@@ -87,7 +82,7 @@ class DatabaseInstanceRelationshipsController < ApplicationController
         format.xml  { head :ok }
       else
         format.html { render :action => "edit" }
-        format.xml  { render :xml => @database_instance_relationship.errors.to_xml }
+        format.xml  { render :xml => @database_instance_relationship.errors.to_xml, :status => :unprocessable_entity }
       end
     end
   end

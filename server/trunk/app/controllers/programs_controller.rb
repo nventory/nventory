@@ -2,7 +2,7 @@ class ProgramsController < ApplicationController
   # GET /programs
   # GET /programs.xml
   def index
-    sort = case @params['sort']
+    sort = case params['sort']
            when "name" then "programs.name"
            when "name_reverse" then "programs.name DESC"
            when "customer" then "customers.name"
@@ -13,29 +13,25 @@ class ProgramsController < ApplicationController
     
     # if a sort was not defined we'll make one default
     if sort.nil?
-      @params['sort'] = "name"
-      sort = "programs.name"
+      params['sort'] = Program.default_search_attribute
+      sort = 'programs.' + Program.default_search_attribute
     end
     
-    @objects_pages = Paginator.new self, Program.count, DEFAULT_SEARCH_RESULT_COUNT, params[:page]
-    @objects = Program.find_by_sql(["SELECT programs.* FROM programs, statuses, customers " + 
-                              " WHERE programs.status_id = statuses.id " +
-                                  " AND programs.deleted_at IS NULL " +
-                                  " AND programs.customer_id = customers.id " + 
-                              " ORDER BY #{sort} " + 
-                              " LIMIT ?,? ",
-                              @objects_pages.current.offset, @objects_pages.items_per_page])
-    
-    # NOTE: The use of #{sort} in the above string could be considered a security hole (SQL injection) if sort
-    # every becomes defineable from an external source.
-    # We use it here, because using the standard way will wrap it in single quotes and make the sql invalid
-    
+    # XML doesn't get pagination
+    if params[:format] && params[:format] == 'xml'
+      @objects = Program.find(:all,
+                              :include => [ :status, :customer ],
+                              :order => sort)
+    else
+      @objects = Program.paginate(:all,
+                                  :include => [ :status, :customer ],
+                                  :order => sort,
+                                  :page => params[:page])
+    end
+
     respond_to do |format|
-      format.html # index.rhtml
-      format.js   { 
-        render :partial => 'shared/results_table', :locals => { :total => @total, :pages => @objects_pages, :objects => @objects }, :layout => false
-      }
-      format.xml  { render :xml => @objects.to_xml }
+      format.html # index.html.erb
+      format.xml  { render :xml => @objects.to_xml(:dasherize => false) }
     end
   end
 
@@ -45,8 +41,8 @@ class ProgramsController < ApplicationController
     @program = Program.find(params[:id])
 
     respond_to do |format|
-      format.html # show.rhtml
-      format.xml  { render :xml => @program.to_xml }
+      format.html # show.html.erb
+      format.xml  { render :xml => @program.to_xml(:dasherize => false) }
     end
   end
 
@@ -54,7 +50,7 @@ class ProgramsController < ApplicationController
   def new
     @program = Program.new
     respond_to do |format|
-      format.html # show.rhtml
+      format.html # show.html.erb
       format.js  { render :action => "inline_new", :layout => false }
     end
   end
@@ -92,7 +88,7 @@ class ProgramsController < ApplicationController
       else
         format.html { render :action => "new" }
         format.js   { render(:update) { |page| page.alert(@program.errors.full_messages) } }
-        format.xml  { render :xml => @program.errors.to_xml }
+        format.xml  { render :xml => @program.errors.to_xml, :status => :unprocessable_entity }
       end
     end
   end
@@ -109,7 +105,7 @@ class ProgramsController < ApplicationController
         format.xml  { head :ok }
       else
         format.html { render :action => "edit" }
-        format.xml  { render :xml => @program.errors.to_xml }
+        format.xml  { render :xml => @program.errors.to_xml, :status => :unprocessable_entity }
       end
     end
   end

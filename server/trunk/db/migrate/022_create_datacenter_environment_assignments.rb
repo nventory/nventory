@@ -13,11 +13,9 @@ class CreateDatacenterEnvironmentAssignments < ActiveRecord::Migration
     add_index :datacenter_environment_assignments, :environment_id
     add_index :datacenter_environment_assignments, :assigned_at
     add_index :datacenter_environment_assignments, :deleted_at
-    DatacenterEnvironmentAssignment.create_versioned_table
   end
 
   def self.down
     drop_table :datacenter_environment_assignments
-    DatacenterEnvironmentAssignment.drop_versioned_table
   end
 end

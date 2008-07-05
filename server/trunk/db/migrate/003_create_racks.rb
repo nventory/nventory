@@ -11,12 +11,10 @@ class CreateRacks < ActiveRecord::Migration
     add_index :racks, :id
     add_index :racks, :name
     add_index :racks, :deleted_at
-    Rack.create_versioned_table
   end
 
   def self.down
     drop_table :racks
-    Rack.drop_versioned_table
   end
   
 end

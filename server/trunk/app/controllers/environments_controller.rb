@@ -2,34 +2,29 @@ class EnvironmentsController < ApplicationController
   # GET /environments
   # GET /environments.xml
   def index
-    sort = case @params['sort']
+    sort = case params['sort']
            when "name" then "environments.name"
            when "name_reverse" then "environments.name DESC"
            end
     
     # if a sort was not defined we'll make one default
     if sort.nil?
-      @params['sort'] = "name"
-      sort = "environments.name"
+      params['sort'] = Environment.default_search_attribute
+      sort = 'environments.' + Environment.default_search_attribute
     end
     
-    @objects_pages = Paginator.new self, Environment.count, DEFAULT_SEARCH_RESULT_COUNT, params[:page]
-    @objects = Environment.find_by_sql(["SELECT environments.* FROM environments " + 
-                              " WHERE environments.deleted_at IS NULL " +
-                              " ORDER BY #{sort} " + 
-                              " LIMIT ?,? ",
-                              @objects_pages.current.offset, @objects_pages.items_per_page])
-    
-    # NOTE: The use of #{sort} in the above string could be considered a security hole (SQL injection) if sort
-    # every becomes defineable from an external source.
-    # We use it here, because using the standard way will wrap it in single quotes and make the sql invalid
-    
+    # XML doesn't get pagination
+    if params[:format] && params[:format] == 'xml'
+      @objects = Environment.find(:all, :order => sort)
+    else
+      @objects = Environment.paginate(:all,
+                                      :order => sort,
+                                      :page => params[:page])
+    end
+
     respond_to do |format|
-      format.html # index.rhtml
-      format.js   { 
-        render :partial => 'shared/results_table', :locals => { :total => @total, :pages => @objects_pages, :objects => @objects }, :layout => false
-      }
-      format.xml  { render :xml => @objects.to_xml }
+      format.html # index.html.erb
+      format.xml  { render :xml => @objects.to_xml(:dasherize => false) }
     end
   end
 
@@ -39,7 +34,7 @@ class EnvironmentsController < ApplicationController
     @environment = Environment.find(params[:id])
 
     respond_to do |format|
-      format.html # show.rhtml
+      format.html # show.html.erb
       format.xml  { render :action => "xml_configuration", :layout => false }
     end
   end
@@ -48,7 +43,7 @@ class EnvironmentsController < ApplicationController
   def new
     @environment = Environment.new
     respond_to do |format|
-      format.html # show.rhtml
+      format.html # show.html.erb
       format.js  { render :action => "inline_new", :layout => false }
     end
   end
@@ -90,7 +85,7 @@ class EnvironmentsController < ApplicationController
       else
         format.html { render :action => "new" }
         format.js   { render(:update) { |page| page.alert(@environment.errors.full_messages) } }
-        format.xml  { render :xml => @environment.errors.to_xml }
+        format.xml  { render :xml => @environment.errors.to_xml, :status => :unprocessable_entity }
       end
     end
   end
@@ -107,7 +102,7 @@ class EnvironmentsController < ApplicationController
         format.xml  { head :ok }
       else
         format.html { render :action => "edit" }
-        format.xml  { render :xml => @environment.errors.to_xml }
+        format.xml  { render :xml => @environment.errors.to_xml, :status => :unprocessable_entity }
       end
     end
   end

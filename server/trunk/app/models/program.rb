@@ -1,6 +1,6 @@
 class Program < ActiveRecord::Base
   
-  acts_as_paranoid_versioned
+  acts_as_paranoid
   
   belongs_to :customer
   belongs_to :status
@@ -14,4 +14,8 @@ class Program < ActiveRecord::Base
     Program.find(:all).sort_by { |p| p.customer.name + p.name }
   end
   
+  def self.default_search_attribute
+    'name'
+  end
+ 
 end

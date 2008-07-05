@@ -14,11 +14,9 @@ class CreateRackNodeAssignments < ActiveRecord::Migration
     add_index :rack_node_assignments, :rack_id
     add_index :rack_node_assignments, :assigned_at
     add_index :rack_node_assignments, :deleted_at
-    RackNodeAssignment.create_versioned_table
   end
 
   def self.down
     drop_table :rack_node_assignments
-    RackNodeAssignment.drop_versioned_table
   end
 end

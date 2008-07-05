@@ -2,34 +2,49 @@ class RacksController < ApplicationController
   # GET /racks
   # GET /racks.xml
   def index
-    sort = case @params['sort']
+    includes = {}
+
+    # The index page includes some data from associations.  If we don't
+    # include those associations then N SQL calls result as that data is
+    # looked up row by row.
+    if !params[:format] || params[:format] == 'html'
+      # datacenter is not currently an association, see the comments
+      # in the rack model for why.  When that changes this can be
+      # uncommented.
+      #includes[:datacenter] = true
+      # Need to include the node's hardware profile as that is used
+      # in calculating the free/used space columns
+      includes[[:nodes => :hardware_profile]] = true
+    end
+
+    sort = case params['sort']
            when "name" then "racks.name"
            when "name_reverse" then "racks.name DESC"
            end
     
     # if a sort was not defined we'll make one default
     if sort.nil?
-      @params['sort'] = "name"
-      sort = "racks.name"
+      params['sort'] = Rack.default_search_attribute
+      sort = 'racks.' + Rack.default_search_attribute
     end
     
-    @objects_pages = Paginator.new self, Rack.count, DEFAULT_SEARCH_RESULT_COUNT, params[:page]
-    @objects = Rack.find_by_sql(["SELECT racks.* FROM racks " + 
-                              " WHERE racks.deleted_at IS NULL " +
-                              " ORDER BY #{sort} " + 
-                              " LIMIT ?,? ",
-                              @objects_pages.current.offset, @objects_pages.items_per_page])
-    
-    # NOTE: The use of #{sort} in the above string could be considered a security hole (SQL injection) if sort
-    # every becomes defineable from an external source.
-    # We use it here, because using the standard way will wrap it in single quotes and make the sql invalid
-    
+    logger.info "includes" + includes.keys.to_yaml
+
+    # XML doesn't get pagination
+    if params[:format] && params[:format] == 'xml'
+      @objects = Rack.find(:all,
+                           :include => includes.keys,
+                           :order => sort)
+    else
+      @objects = Rack.paginate(:all,
+                               :include => includes.keys,
+                               :order => sort,
+                               :page => params[:page])
+    end
+
     respond_to do |format|
-      format.html # index.rhtml
-      format.js   { 
-        render :partial => 'shared/results_table', :locals => { :total => @total, :pages => @objects_pages, :objects => @objects }, :layout => false
-      }
-      format.xml  { render :xml => @objects.to_xml }
+      format.html # index.html.erb
+      format.xml  { render :xml => @objects.to_xml(:dasherize => false) }
     end
   end
 
@@ -39,8 +54,8 @@ class RacksController < ApplicationController
     @rack = Rack.find(params[:id])
 
     respond_to do |format|
-      format.html # show.rhtml
-      format.xml  { render :xml => @rack.to_xml }
+      format.html # show.html.erb
+      format.xml  { render :xml => @rack.to_xml(:dasherize => false) }
     end
   end
 
@@ -48,7 +63,7 @@ class RacksController < ApplicationController
   def new
     @rack = Rack.new
     respond_to do |format|
-      format.html # show.rhtml
+      format.html # show.html.erb
       format.js  { render :action => "inline_new", :layout => false }
     end
   end
@@ -83,7 +98,7 @@ class RacksController < ApplicationController
       else
         format.html { render :action => "new" }
         format.js   { render(:update) { |page| page.alert(@rack.errors.full_messages) } }
-        format.xml  { render :xml => @rack.errors.to_xml }
+        format.xml  { render :xml => @rack.errors.to_xml, :status => :unprocessable_entity }
       end
     end
   end
@@ -100,7 +115,7 @@ class RacksController < ApplicationController
         format.xml  { head :ok }
       else
         format.html { render :action => "edit" }
-        format.xml  { render :xml => @rack.errors.to_xml }
+        format.xml  { render :xml => @rack.errors.to_xml, :status => :unprocessable_entity }
       end
     end
   end

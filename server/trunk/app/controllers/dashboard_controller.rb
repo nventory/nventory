@@ -19,14 +19,19 @@ class DashboardController < ApplicationController
       # Some System Install Defaults
       hp1 = HardwareProfile.new
       hp1.name = 'SunFireX4100'
-      hp1.manufacturer = 'Sun MicroSystems'
+      hp1.manufacturer = 'Sun Microsystems'
+      hp1.model = 'Sun Fire X4100'
       hp1.rack_size = 1
       hp1.memory = '1GB'
       hp1.disk = '80GB'
       hp1.nics = 3
-      hp1.processor_type = 'Opteron'
+      hp1.processor_manufacturer = 'AMD'
+      hp1.processor_model = 'Opteron'
       hp1.processor_speed = '3GHZ'
+      hp1.processor_socket_count = 2
       hp1.processor_count = 1
+      hp1.power_supply_slot_count = 2
+      hp1.power_supply_count = 1
       hp1.cards = ''
       hp1.notes = 'Test Node Type'
       hp1.save
@@ -35,17 +40,30 @@ class DashboardController < ApplicationController
       hp2 = HardwareProfile.new
       hp2.name = 'PowerEdge1950'
       hp2.manufacturer = 'Dell'
+      hp2.model = 'PowerEdge 1950'
       hp2.rack_size = 1
       hp2.memory = '1GB'
       hp2.disk = '80GB'
       hp2.nics = 3
-      hp2.processor_type = 'Opteron'
+      hp2.processor_manufacturer = 'AMD'
+      hp2.processor_model = 'Opteron'
       hp2.processor_speed = '3GHZ'
+      hp2.processor_socket_count = 2
       hp2.processor_count = 1
+      hp2.power_supply_slot_count = 2
+      hp2.power_supply_count = 1
       hp2.cards = ''
       hp2.notes = 'Test Node Type 2'
       hp2.save
       
+      # Some System Install Defaults
+      os1 = OperatingSystem.new
+      os1.name = 'Linux: FC5'
+      os1.vendor = 'Fedora'
+      os1.variant = 'Fedora Core'
+      os1.version_number = '5'
+      os1.save
+
       ft_web = FunctionType.create(:name => 'Web Server')
       ft_file = FunctionType.create(:name => 'File Server')
       ft_firewall = FunctionType.create(:name => 'Firewall')

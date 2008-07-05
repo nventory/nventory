@@ -4,10 +4,12 @@ one:
   name: MyString
   vendor: MyString
   variant: MyString
-  version: MyString
+  version_number: MyString
+  architecture: i386
 two:
   id: 2
   name: MyString
   vendor: MyString
   variant: MyString
-  version: MyString
+  version_number: MyString
+  architecture: x86_64

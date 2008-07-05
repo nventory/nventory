@@ -1,12 +1,27 @@
 <%- @page_title = objects.first.class.to_s.underscore.titleize.pluralize %>
 <h1><%= objects.first.class.to_s.underscore.titleize.pluralize %></h1>
 
-<p><%= link_to 'New ' + objects.first.class.to_s.titleize, self.send('new_' + objects.first.class.to_s.underscore + '_path') %></p>
+<table width="100%">
+<tr>
 
-<%- if !total_found.blank? -%>
-<p>Total found: <%= total_found.to_s %></p>
-<%- end -%>
+<td>
+<%= link_to 'New ' + objects.first.class.to_s.titleize, self.send('new_' + objects.first.class.to_s.underscore + '_path') %><br/>
+
+<%= page_entries_info objects %>
+</td>
+
+<td align="right">
+
+FIXME: Advanced Search<br/>
+
+Search by <%= objects.first.class.default_search_attribute %>: <% form_tag '/' + objects.first.class.to_s.underscore.pluralize, :method => :get do -%>
+  <%= text_field_tag objects.first.class.default_search_attribute %>
+<% end %>
+</td>
+
+</tr>
+</table>
 
 <div id="results_table">
-<%= render :partial => 'shared/results_table', :locals => { :pages => pages, :objects => objects } %>
+<%= render :partial => 'shared/results_table', :locals => { :objects => objects } %>
 </div> <!-- end results_table div -->

@@ -18,13 +18,21 @@ ActionController::Routing::Routes.draw do |map|
   map.resources :node_function_assignments
   map.resources :functions
   map.resources :statuses
+  map.resources :subnets
+  map.resources :node_groups
+  map.resources :node_group_node_assignments
+  map.resources :node_group_node_group_assignments
   map.resources :operating_systems
   map.resources :hardware_profiles
   map.resources :rack_node_assignments
   map.resources :nodes
+  map.resources :network_interfaces
+  map.resources :ip_addresses
   map.resources :datacenters
   map.resources :racks
   map.resources :datacenter_rack_assignments
+  map.resources :vips
+  map.resources :datacenter_vip_assignments
 
   # Add the version_history method to all the object routes
   map.resources :datacenters,                          :member => { :version_history => :get } 
@@ -32,9 +40,15 @@ ActionController::Routing::Routes.draw do |map|
   map.resources :racks,                                :member => { :version_history => :get } 
   map.resources :rack_node_assignments,                :member => { :version_history => :get } 
   map.resources :nodes,                                :member => { :version_history => :get } 
+  map.resources :network_interfaces,                   :member => { :version_history => :get } 
+  map.resources :ip_addresses,                         :member => { :version_history => :get } 
   map.resources :hardware_profiles,                    :member => { :version_history => :get } 
   map.resources :operating_systems,                    :member => { :version_history => :get } 
   map.resources :statuses,                             :member => { :version_history => :get } 
+  map.resources :subnets,                              :member => { :version_history => :get } 
+  map.resources :node_groups,                          :member => { :version_history => :get } 
+  map.resources :node_group_node_assignments,          :member => { :version_history => :get } 
+  map.resources :node_group_node_group_assignments,    :member => { :version_history => :get } 
   map.resources :functions,                            :member => { :version_history => :get } 
   map.resources :node_function_assignments,            :member => { :version_history => :get } 
   map.resources :database_instances,                   :member => { :version_history => :get } 
@@ -49,6 +63,8 @@ ActionController::Routing::Routes.draw do |map|
   map.resources :database_instance_relationships,      :member => { :version_history => :get } 
   map.resources :accounts,                             :member => { :version_history => :get } 
   map.resources :function_types,                       :member => { :version_history => :get } 
+  map.resources :vips,                                 :member => { :version_history => :get } 
+  map.resources :datacenter_vip_assignments,           :member => { :version_history => :get } 
 
   # add get method that will return the consumer on this outlet (used in AJAX on Node page)
   map.resources :outlets, :member => { :consumer => :get } 

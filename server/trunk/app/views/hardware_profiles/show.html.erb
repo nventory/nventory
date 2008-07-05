@@ -7,13 +7,18 @@
 <h1>Hardware Profile: <%=h @hardware_profile.name %></h1>
 
 <p><strong>Manufacturer:</strong> <%=h @hardware_profile.manufacturer %><br />
+<strong>Model:</strong> <%=h @hardware_profile.model %><br />
 <strong>Rack size:</strong> <%=h @hardware_profile.rack_size %><br />
 <strong>Memory:</strong> <%=h @hardware_profile.memory %><br />
 <strong>Disk:</strong> <%=h @hardware_profile.disk %><br />
 <strong>Nics:</strong> <%=h @hardware_profile.nics %><br />
-<strong>Power Supply Count:</strong> <%=h @hardware_profile.power_supply_count %><br />
-<strong>Processor type:</strong> <%=h @hardware_profile.processor_type %><br />
+<strong>Power supply slot count:</strong> <%=h @hardware_profile.power_supply_slot_count %><br />
+<strong>Power supply count:</strong> <%=h @hardware_profile.power_supply_count %><br />
+<strong>Power consumption:</strong> <%=h @hardware_profile.power_consumption %><br />
+<strong>Processor manufacturer:</strong> <%=h @hardware_profile.processor_manufacturer %><br />
+<strong>Processor model:</strong> <%=h @hardware_profile.processor_model %><br />
 <strong>Processor speed:</strong> <%=h @hardware_profile.processor_speed %><br />
+<strong>Processor socket count:</strong> <%=h @hardware_profile.processor_socket_count %><br />
 <strong>Processor count:</strong> <%=h @hardware_profile.processor_count %><br />
 <strong>Outlet count:</strong> <%=h @hardware_profile.outlet_count %><br />
 <strong>Outlet type:</strong> <%=h @hardware_profile.outlet_type %><br />
@@ -21,8 +26,19 @@
 <strong>Visualization Color:</strong> <code style="color:<%=h @hardware_profile.visualization_color %>;"><%=h @hardware_profile.visualization_color %></code><br />
 <strong>Estimated Cost:</strong> <%= number_to_currency(@hardware_profile.estimated_cost) %><br /></p>
 
-<p><strong>Notes:</strong><br />
-<%= textilize_without_paragraph(h(@hardware_profile.notes)) %></p>
+<p><strong>Description:</strong><br />
+<%= textilize_without_paragraph(h(@hardware_profile.description)) %></p>
+
+<p><strong>Notes:</strong></p>
+<%- if @hardware_profile.hardware_profile_notes.length > 0 -%>
+<ul>
+<%- @hardware_profile.hardware_profile_notes.each do |note| %>
+<li><%= h(note.created_at) %>: <%= h(note.note) %></li>
+<%- end -%>
+</ul>
+<%- else -%>
+<p>This hardware profile does not have any notes.</p>
+<%- end -%>
 
 <p class="metadata"><strong>Created at:</strong> <%= h(@hardware_profile.created_at) %><br />
 <strong>Updated at:</strong> <%= h(@hardware_profile.updated_at) %></p>
