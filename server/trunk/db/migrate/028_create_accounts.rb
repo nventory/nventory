@@ -17,7 +17,7 @@ class CreateAccounts < ActiveRecord::Migration
     
     # Some System Install Defaults
     Account.create(:name => 'admin', :login => 'admin', :password => 'admin', :email_address => 'admin@domain.com', :admin => true)
-    Account.create(:name => 'autoreg', :login => 'autoreg', :password => 'autoreg', :email_address => 'admin@domain.com', :admin => true)
+    Account.create(:name => 'autoreg', :login => 'autoreg', :password => 'autoreg', :email_address => 'autoreg@domain.com', :admin => true)
     
   end
 
