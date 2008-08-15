@@ -21,12 +21,6 @@ class AddAdditionalFieldsToHardwareProfile < ActiveRecord::Migration
     change_column "hardware_profiles", "power_supply_count", :integer, :default => nil
 
     rename_column "hardware_profiles", "notes", "description"
-    create_table :hardware_profile_notes do |t|
-      t.column :hardware_profile_id,   :integer, :null => false
-      t.column :note,                  :string, :null => false
-      t.column :created_at,            :datetime
-    end
-    add_index :hardware_profile_notes, :hardware_profile_id
   end
 
   def self.down
@@ -42,6 +36,5 @@ class AddAdditionalFieldsToHardwareProfile < ActiveRecord::Migration
     remove_column "hardware_profiles", "power_consumption"
 
     rename_column "hardware_profiles", "description", "notes"
-    drop_table :hardware_profile_notes
   end
 end

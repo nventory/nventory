@@ -25,12 +25,6 @@ class AddAdditionalFieldsToNode < ActiveRecord::Migration
     add_column "nodes", "preferred_operating_system_id", :integer
 
     add_column "nodes", "description", :text
-    create_table :node_notes do |t|
-      t.column :node_id,               :integer, :null => false
-      t.column :note,                  :string, :null => false
-      t.column :created_at,            :datetime
-    end
-    add_index :node_notes, :node_id
   end
 
   def self.down
@@ -56,6 +50,5 @@ class AddAdditionalFieldsToNode < ActiveRecord::Migration
     remove_column "nodes", "preferred_operating_system_id"
 
     remove_column "nodes", "description"
-    drop_table :node_notes
   end
 end

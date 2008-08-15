@@ -11,17 +11,9 @@ class CreateVips < ActiveRecord::Migration
     add_index :vips, :name, :unique => true
     add_index :vips, :node_group_id
     add_index :vips, :deleted_at
-
-    create_table :vip_notes do |t|
-      t.column :vip_id,           :integer, :null => false
-      t.column :note,             :string, :null => false
-      t.column :created_at,       :datetime
-    end
-    add_index :vip_notes, :vip_id
   end
 
   def self.down
     drop_table :vips
-    drop_table :vip_notes
   end
 end

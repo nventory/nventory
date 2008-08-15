@@ -15,17 +15,9 @@ class CreateSubnets < ActiveRecord::Migration
     add_index :subnets, :network, :unique => true
     add_index :subnets, :node_group_id
     add_index :subnets, :deleted_at
-
-    create_table :subnet_notes do |t|
-      t.column :subnet_id,             :integer, :null => false
-      t.column :note,                  :string, :null => false
-      t.column :created_at,            :datetime
-    end
-    add_index :subnet_notes, :subnet_id
   end
 
   def self.down
     drop_table :subnets
-    drop_table :subnet_notes
   end
 end
