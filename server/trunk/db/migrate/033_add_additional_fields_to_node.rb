@@ -24,12 +24,6 @@ class AddAdditionalFieldsToNode < ActiveRecord::Migration
     # (re)installed
     add_column "nodes", "preferred_operating_system_id", :integer
 
-    # This is irreversible, so we have to throw an
-    # ActiveRecord::IrreversibleMigration exception in down.  We can't
-    # migrate them into the new NIC framework because we don't know
-    # which NIC to associate each address with.
-    remove_column "nodes", "ipaddresses"
-
     add_column "nodes", "description", :text
     create_table :node_notes do |t|
       t.column :node_id,               :integer, :null => false
@@ -63,12 +57,5 @@ class AddAdditionalFieldsToNode < ActiveRecord::Migration
 
     remove_column "nodes", "description"
     drop_table :node_notes
-
-    add_column "nodes", "ipaddresses", :text
-    # We can't ressurrect the ipaddresses data from the dead, so end by
-    # throwing an ActiveRecord::IrreversibleMigration exception to
-    # indicate that
-    raise ActiveRecord::IrreversibleMigration,
-      "Can't recover the deleted IP addresses"
   end
 end
