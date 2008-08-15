@@ -1,11 +1,11 @@
 class Vip < ActiveRecord::Base
 
   acts_as_paranoid
+  acts_as_commentable
 
   belongs_to :node_group
   has_many :datacenter_vip_assignments, :dependent => :destroy
   has_many :datacenters, :through => :datacenter_vip_assignments, :conditions => 'datacenter_vip_assignments.deleted_at IS NULL'
-  has_many :vip_notes, :dependent => :destroy
 
   # These constraints are duplicates of constraints imposed at the
   # database layer (see the relevant migration file for details).

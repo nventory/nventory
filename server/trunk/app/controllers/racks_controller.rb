@@ -68,7 +68,7 @@ class RacksController < ApplicationController
     end
   end
 
-  # GET /racks/1;edit
+  # GET /racks/1/edit
   def edit
     @rack = Rack.find(params[:id])
   end
@@ -141,15 +141,26 @@ class RacksController < ApplicationController
     end
   end
   
-  # GET /racks/1;version_history
+  # GET /racks/1/version_history
   def version_history
     @rack = Rack.find_with_deleted(params[:id])
     render :action => "version_table", :layout => false
   end
   
-  # GET /racks/1;visualization
+  # GET /racks/1/visualization
   def visualization
     @rack = Rack.find_with_deleted(params[:id])
+  end
+  
+  # GET /racks/field_names
+  def field_names
+    super(Rack)
+  end
+
+  # GET /racks/search
+  def search
+    @rack = Rack.find(:first)
+    render :action => 'search'
   end
   
 end

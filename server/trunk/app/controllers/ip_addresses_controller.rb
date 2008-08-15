@@ -4,15 +4,6 @@ class IpAddressesController < ApplicationController
   def index
     includes = {}
 
-    # The index page includes some data from associations.  If we don't
-    # include those associations then N SQL calls result as that data is
-    # looked up row by row.
-    if !params[:format] || params[:format] == 'html'
-      # node isn't a true association, so we have to use a nested include
-      # to pull in that data
-      includes[[:network_interface => :node]] = true
-    end
-    
     sort = case params['sort']
            when "address"                   then "ip_addresses.address"
            when "address_reverse"           then "ip_addresses.address DESC"
@@ -28,15 +19,18 @@ class IpAddressesController < ApplicationController
       sort = 'ip_addresses.' + IpAddress.default_search_attribute
     end
 
+    # The index page includes some data from associations.  If we don't
+    # include those associations then N SQL calls result as that data is
+    # looked up row by row.
+    if !params[:format] || params[:format] == 'html'
+      includes[[:network_interface => :node]] = true
+    end
+    
     # The data we render to XML includes some data from associations.
     # If we don't include those associations then N SQL calls result
     # as that data is looked up row by row.
     if params[:format] && params[:format] == 'xml'
-      # We don't have a real association to the node so we can't include
-      # it in the XML unfortunately.  See the comment in the ip_address
-      # model for why we don't have a real association.
-      #includes[[:network_interface => :node]] = true
-      includes[:network_interface] = true
+      includes[[:network_interface => :node]] = true
     end
     
     logger.info "includes" + includes.keys.to_yaml
@@ -57,8 +51,8 @@ class IpAddressesController < ApplicationController
       format.html # index.html.erb
       format.xml  { render :xml => @objects.to_xml(
                                 :include => {
-                                  #:network_interface => { :include => :node }},
-                                  :network_interface => {}},
+                                  :network_interface => { :include => :node }
+                                  },
                                 :dasherize => false) }
     end
   end
@@ -71,11 +65,7 @@ class IpAddressesController < ApplicationController
     # If we don't include those associations then N SQL calls result
     # as that data is looked up row by row.
     if params[:format] && params[:format] == 'xml'
-      # We don't have a real association to the node so we can't include
-      # it in the XML unfortunately.  See the comment in the ip_address
-      # model for why we don't have a real association.
-      #includes[[:network_interface => :node]] = true
-      includes[:network_interface] = true
+      includes[[:network_interface => :node]] = true
     end
     
     @ip_address = IpAddress.find(params[:id],
@@ -85,8 +75,8 @@ class IpAddressesController < ApplicationController
       format.html # show.html.erb
       format.xml  { render :xml => @ip_address.to_xml(
                                 :include => {
-                                  #:network_interface => { :include => :node }},
-                                  :network_interface => {}},
+                                  :network_interface => { :include => :node }
+                                  },
                                 :dasherize => false) }
     end
   end
@@ -96,7 +86,7 @@ class IpAddressesController < ApplicationController
     @ip_address = IpAddress.new
   end
 
-  # GET /ip_addresses/1;edit
+  # GET /ip_addresses/1/edit
   def edit
     @ip_address = IpAddress.find(params[:id])
   end
@@ -147,10 +137,21 @@ class IpAddressesController < ApplicationController
     end
   end
   
-  # GET /ip_addresses/1;version_history
+  # GET /ip_addresses/1/version_history
   def version_history
     @ip_address = IpAddress.find_with_deleted(params[:id])
     render :action => "version_table", :layout => false
+  end
+  
+  # GET /ip_addresses/field_names
+  def field_names
+    super(IpAddress)
+  end
+
+  # GET /ip_addresses/search
+  def search
+    @ip_address = IpAddress.find(:first)
+    render :action => 'search'
   end
   
 end

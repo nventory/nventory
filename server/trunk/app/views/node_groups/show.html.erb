@@ -9,17 +9,6 @@
 <p><strong>Description:</strong><br />
 <%= textilize_without_paragraph(h(@node_group.description)) %></p>
 
-<p><strong>Notes:</strong></p>
-<%- if @node_group.node_group_notes.length > 0 -%>
-<ul>
-<%- @node_group.node_group_notes.each do |note| %>
-<li><%= h(note.created_at) %>: <%= h(note.note) %></li>
-<%- end -%>
-</ul>
-<%- else -%>
-<p>This node group does not have any notes.</p>
-<%- end -%>
-
 <p>
 <strong>Children:</strong>
 <ul>
@@ -43,6 +32,12 @@
 <strong>Updated at:</strong> <%= h(@node_group.updated_at) %></p>
 
 </div>
+
+<div class="relationship">
+
+<%= render :partial => 'shared/comments', :locals => { :object => @node_group} %>
+
+</div> <!-- end relationship -->
 
 <%- if !@node_group.deleted_at -%>
 <p><%= link_to 'Edit', edit_node_group_path(@node_group) %> | 

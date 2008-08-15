@@ -1,5 +1,0 @@
-<p><strong>Datacenter:</strong> <br /><%= f.select :datacenter_id, Datacenter.find(:all, :order => 'name').collect { |d| [ d.name, d.id ] }, { :include_blank => true } %></p>
-
-<p><strong>Environment:</strong> <br /><%= f.select :environment_id, Environment.find(:all, :order => 'name').collect { |r| [ r.name, r.id ] }, { :include_blank => true } %></p>
-
-<p><strong>Assigned at:</strong> <br/><%= f.datetime_select :assigned_at %></p>

@@ -64,7 +64,7 @@ class NodeGroupsController < ApplicationController
     @node_group = NodeGroup.new
   end
 
-  # GET /node_groups/1;edit
+  # GET /node_groups/1/edit
   def edit
     @node_group = NodeGroup.find(params[:id])
   end
@@ -125,10 +125,21 @@ class NodeGroupsController < ApplicationController
     end
   end
   
-  # GET /node_groups/1;version_history
+  # GET /node_groups/1/version_history
   def version_history
     @node_group = NodeGroup.find_with_deleted(params[:id])
     render :action => "version_table", :layout => false
+  end
+  
+  # GET /node_groups/field_names
+  def field_names
+    super(NodeGroup)
+  end
+
+  # GET /node_groups/search
+  def search
+    @node_group = NodeGroup.find(:first)
+    render :action => 'search'
   end
   
   def process_node_group_assignments

@@ -14,21 +14,22 @@
 <p><strong>Description:</strong><br />
 <%= textilize_without_paragraph(h(@operating_system.description)) %></p>
 
-<p><strong>Notes:</strong></p>
-<%- if @operating_system.operating_system_notes.length > 0 -%>
-<ul>
-<%- @operating_system.operating_system_notes.each do |note| %>
-<li><%= h(note.created_at) %>: <%= h(note.note) %></li>
-<%- end -%>
-</ul>
-<%- else -%>
-<p>This operating system does not have any notes.</p>
-<%- end -%>
-
 <p class="metadata"><strong>Created at:</strong> <%= h(@operating_system.created_at) %><br />
 <strong>Updated at:</strong> <%= h(@operating_system.updated_at) %></p>
 
 </div>
+
+<div class="relationship">
+
+<%= render :partial => 'shared/comments', :locals => { :object => @operating_system} %>
+
+</div> <!-- end relationship -->
+
+<div class="relationship">
+
+<%= link_to 'Search', "#{nodes_path}?operating_system=#{CGI.escape(@operating_system.name)}" %> for nodes with this operating system
+
+</div> <!-- end relationship -->
 
 <%- if !@operating_system.deleted_at -%>
 <p><%= link_to 'Edit', edit_operating_system_path(@operating_system) %> | 

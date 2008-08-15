@@ -15,40 +15,20 @@ class NodeTest < Test::Unit::TestCase
     assert(!RackNodeAssignment.exists?(rack1_node1_assignment_id))
   end
   
-  def test_node_deletion_causes_environment_node_assignment_deletion
-    environment = Environment.create(:name => 'env1')
-    node = Node.create(:name => 'bob-node-01', :status => Status.find(:first), :hardware_profile => HardwareProfile.find(:first))
-    environment_node_assignment = EnvironmentNodeAssignment.create(:node => node, :environment => environment)
-    
-    assert_equal(0, environment.errors.count)
-    assert_equal(0, node.errors.count)
-    assert_equal(0, environment_node_assignment.errors.count)
-    assert_equal(1, node.environment_node_assignments.count) 
-    assert_equal(1, node.environments.count)
-    
-    environment_node_assignment_id = environment_node_assignment.id
-    node_id = node.id
-    environment_id = environment.id
-    node.destroy
-    assert(!Node.exists?(node_id))
-    assert(Environment.exists?(environment_id))
-    assert(!EnvironmentNodeAssignment.exists?(environment_node_assignment_id))
-  end
-  
-  def test_node_deletion_causes_node_function_assignment_deletion
+  def test_node_deletion_causes_node_group_assignment_deletion
     node1 = Node.create(:name => 'bob-node-01', :status => Status.find(:first), :hardware_profile => HardwareProfile.find(:first))
-    node1_function_assignment = NodeFunctionAssignment.create(:node => node1, :function => Function.find(:first))
+    node1_node_group_assignment = NodeGroupNodeAssignment.create(:node => node1, :node_group => NodeGroup.find(:first))
     
     assert_not_nil(node1)
-    assert_not_nil(node1_function_assignment)
-    assert_equal(1, node1.node_function_assignments.count) 
-    assert_equal(1, node1.functions.count) 
+    assert_not_nil(node1_node_group_assignment)
+    assert_equal(1, node1.node_group_node_assignments.count) 
+    assert_equal(1, node1.node_groups.count) 
     
-    node1_function_assignment_id = node1_function_assignment.id
+    node1_node_group_assignment_id = node1_node_group_assignment.id
     node1_id = node1.id
     node1.destroy
     assert(!Node.exists?(node1_id))
-    assert(!NodeFunctionAssignment.exists?(node1_function_assignment_id))
+    assert(!NodeGroupNodeAssignment.exists?(node1_node_group_assignment_id))
   end
   
   

@@ -44,7 +44,7 @@ class OperatingSystemsController < ApplicationController
     @operating_system = OperatingSystem.new
   end
 
-  # GET /operating_systems/1;edit
+  # GET /operating_systems/1/edit
   def edit
     @operating_system = OperatingSystem.find(params[:id])
   end
@@ -95,10 +95,21 @@ class OperatingSystemsController < ApplicationController
     end
   end
   
-  # GET /operating_systems/1;version_history
+  # GET /operating_systems/1/version_history
   def version_history
     @operating_system = OperatingSystem.find_with_deleted(params[:id])
     render :action => "version_table", :layout => false
+  end
+  
+  # GET /operating_systems/field_names
+  def field_names
+    super(OperatingSystem)
+  end
+
+  # GET /operating_systems/search
+  def search
+    @operating_system = OperatingSystem.find(:first)
+    render :action => 'search'
   end
   
 end

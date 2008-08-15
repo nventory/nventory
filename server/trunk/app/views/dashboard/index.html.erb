@@ -9,7 +9,7 @@
   <li><%= link_to 'View All Nodes', nodes_path %></li>
   <li><%= dashboard_pulldown_form_for_model(Node, HardwareProfile.find(:all, :order => HardwareProfile.default_search_attribute)) %></li>
   <li><%= dashboard_pulldown_form_for_model(Node, OperatingSystem.find(:all, :order => OperatingSystem.default_search_attribute)) %></li>
-  <li><%= dashboard_pulldown_form_for_model(Node, Status.find(:all, :conditions => "relevant_model = 'Node'", :order => Status.default_search_attribute)) %></li>
+  <li><%= dashboard_pulldown_form_for_model(Node, Status.find(:all, :order => Status.default_search_attribute)) %></li>
 </ul>
 
 <h3>Datacenters</h3>

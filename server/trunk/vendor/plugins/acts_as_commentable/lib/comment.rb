@@ -6,13 +6,13 @@ class Comment < ActiveRecord::Base
   #acts_as_voteable
   
   # NOTE: Comments belong to a user
-  belongs_to :user
+  belongs_to :account, :foreign_key => 'user_id'
   
   # Helper class method to lookup all comments assigned
   # to all commentable types for a given user.
-  def self.find_comments_by_user(user)
+  def self.find_comments_by_user(account)
     find(:all,
-      :conditions => ["user_id = ?", user.id],
+      :conditions => ["user_id = ?", account.id],
       :order => "created_at DESC"
     )
   end

@@ -34,36 +34,4 @@ class DatacenterTest < Test::Unit::TestCase
     assert(!DatacenterRackAssignment.exists?(bob_rack1_assignment_id))
   end
   
-  
-  def test_cant_delete_with_environment_assignment
-    datacenter = Datacenter.create(:name => "Bob")
-    environment = Environment.create(:name => 'bob-setup')
-    assignment = DatacenterEnvironmentAssignment.create(:datacenter => datacenter, :environment => environment)
-    
-    assert_not_nil(datacenter)
-    assert_not_nil(environment)
-    assert_not_nil(assignment)
-    assert_equal(1, datacenter.datacenter_environment_assignments.count) 
-    assert_equal(1, datacenter.environments.count) 
-    
-    # Test that we can't destroy
-    begin
-      datacenter.destroy
-    rescue Exception => destroy_error
-      assert_equal(destroy_error.message, 'A datacenter can not be destroyed that has environments assigned to it.')
-    else
-      flunk('Trouble. We deleted a datacenter that had a environments assigned to it.')
-    end
-    
-    # Remove the assignment, and make sure bob was destroyed
-    assignment_id = assignment.id
-    environment_id = environment.id
-    datacenter_id = datacenter.id
-    assignment.destroy
-    datacenter.destroy
-    assert(!Datacenter.exists?(datacenter_id))
-    assert(Environment.exists?(environment_id))
-    assert(!DatacenterEnvironmentAssignment.exists?(assignment_id))
-  end
-  
 end

@@ -1,6 +1,7 @@
 class Outlet < ActiveRecord::Base
   
   acts_as_paranoid
+  acts_as_commentable
   
   # FIXME: Network outlets should really be consumed by a NIC, not a
   # node, but that screws up the genericness of this model

@@ -48,7 +48,7 @@ class DatabaseInstanceRelationshipsController < ApplicationController
     @database_instance_relationship = DatabaseInstanceRelationship.new
   end
 
-  # GET /database_instance_relationships/1;edit
+  # GET /database_instance_relationships/1/edit
   def edit
     @database_instance_relationship = DatabaseInstanceRelationship.find(params[:id])
   end
@@ -99,7 +99,7 @@ class DatabaseInstanceRelationshipsController < ApplicationController
     end
   end
   
-  # GET /environment_node_assignments/1;version_history
+  # GET /database_instance_relationships/1/version_history
   def version_history
     @database_instance_relationship = DatabaseInstanceRelationship.find_with_deleted(params[:id])
     render :action => "version_table", :layout => false

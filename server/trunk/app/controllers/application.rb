@@ -18,13 +18,12 @@ class ApplicationController < ActionController::Base
   include SslRequirement
 
   # Turn on the acts_as_audited plugin for appropriate models
-  audit Account, Customer, DatabaseInstance, DatabaseInstanceRelationship,
-    Datacenter, DatacenterEnvironmentAssignment, DatacenterRackAssignment,
-    DatacenterVipAssignment, Environment, EnvironmentNodeAssignment,
-    EnvironmentProgramAssignment, Function, FunctionType, HardwareProfile,
+  audit Account, DatabaseInstance, DatabaseInstanceRelationship,
+    Datacenter, DatacenterRackAssignment,
+    DatacenterVipAssignment, HardwareProfile,
     IpAddress, NetworkInterface, Node, NodeDatabaseInstanceAssignment,
-    NodeFunctionAssignment, NodeGroup, NodeGroupNodeAssignment,
-    NodeGroupNodeGroupAssignment, OperatingSystem, Outlet, Program, Rack,
+    NodeGroup, NodeGroupNodeAssignment,
+    NodeGroupNodeGroupAssignment, OperatingSystem, Outlet, Rack,
     RackNodeAssignment, Status, Subnet, Vip
 
   # Pick a unique cookie name to distinguish our session data from others'
@@ -84,6 +83,46 @@ class ApplicationController < ActionController::Base
     end
     # Give the thumb's up if we didn't find any reason to reject the user
     return true
+  end
+  
+  # Controllers punt to this method to implement the field_names action
+  def field_names(mainclass)
+    fields_xml = ''
+    xm = Builder::XmlMarkup.new(:target => fields_xml, :indent => 2)
+    xm.instruct!
+    xm.field_names{
+      # Insert all of our local column names
+      mainclass.content_columns.each { |column| xm.field_name("#{column.name}") }
+
+      # Then insert all of the column names from our associations
+      mainclass.reflect_on_all_associations.each do |assoc|
+        # Don't expose implementation details that aren't meaningful
+        # to the user
+        next if assoc.name == :audits
+        next if assoc.name.to_s =~ /_assignments?$/
+        
+        assoc.klass.content_columns.each do |column|
+          # If it's the column that we let the user shortcut by just
+          # specifying the association (leaving off the column name)
+          # then indicate that to the user by including the shortcut.
+          # I could be convinced to do this in a more XMLish fashion
+          # (i.e. a <field_name_shortcut> element or something) if
+          # someone wanted to programatically do something with these.
+          # Currently the client just dumps these out to the user so this
+          # is sufficient.
+          if (assoc.klass.respond_to?('default_search_attribute') &&
+            column.name == assoc.klass.default_search_attribute)
+            xm.field_name("#{assoc.name}.#{column.name} (#{assoc.name})")
+          else
+            xm.field_name("#{assoc.name}.#{column.name}")
+          end
+        end
+      end
+    }
+
+    respond_to do |format|
+      format.xml { render :xml => fields_xml }
+    end
   end
   
   # Used by acts_as_audited

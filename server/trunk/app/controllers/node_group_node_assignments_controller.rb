@@ -44,7 +44,7 @@ class NodeGroupNodeAssignmentsController < ApplicationController
     @node_group_node_assignment = NodeGroupNodeAssignment.new
   end
 
-  # GET /node_group_node_assignments/1;edit
+  # GET /node_group_node_assignments/1/edit
   def edit
     @node_group_node_assignment = NodeGroupNodeAssignment.find(params[:id])
   end
@@ -64,9 +64,9 @@ class NodeGroupNodeAssignmentsController < ApplicationController
         format.js { 
           render(:update) { |page| 
             
-            page.replace_html 'node_group_node_assignments', :partial => 'nodes/group_assignments', :locals => { :node => @node_group_node_assignment.node }
-            page.hide 'create_node_group_node_assignment'
-            page.show 'add_node_group_node_assignment_link'
+            page.replace_html 'node_group_node_assignments', :partial => 'nodes/node_group_assignments', :locals => { :node => @node_group_node_assignment.node }
+            page.hide 'create_node_group_assignment'
+            page.show 'add_node_group_assignment_link'
           }
         }
         format.xml  { head :created, :location => node_group_node_assignment_url(@node_group_node_assignment) }
@@ -122,14 +122,14 @@ class NodeGroupNodeAssignmentsController < ApplicationController
       format.js {
         render(:update) { |page|
           
-          page.replace_html 'node_group_node_assignments', {:partial => 'nodes/node_group_node_assignments', :locals => { :node => @node} }
+          page.replace_html 'node_group_node_assignments', {:partial => 'nodes/node_group_assignments', :locals => { :node => @node} }
         }
       }
       format.xml  { head :ok }
     end
   end
   
-  # GET /node_group_node_assignments/1;version_history
+  # GET /node_group_node_assignments/1/version_history
   def version_history
     @node_group_node_assignment = NodeGroupNodeAssignment.find_with_deleted(params[:id])
     render :action => "version_table", :layout => false

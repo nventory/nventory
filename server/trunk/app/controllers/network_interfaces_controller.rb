@@ -44,7 +44,7 @@ class NetworkInterfacesController < ApplicationController
     @network_interface = NetworkInterface.new
   end
 
-  # GET /network_interfaces/1;edit
+  # GET /network_interfaces/1/edit
   def edit
     @network_interface = NetworkInterface.find(params[:id])
   end
@@ -149,10 +149,21 @@ class NetworkInterfacesController < ApplicationController
     end
   end
   
-  # GET /network_interfaces/1;version_history
+  # GET /network_interfaces/1/version_history
   def version_history
     @network_interface = NetworkInterface.find_with_deleted(params[:id])
     render :action => "version_table", :layout => false
+  end
+  
+  # GET /network_interfaces/field_names
+  def field_names
+    super(NetworkInterface)
+  end
+
+  # GET /network_interfaces/search
+  def search
+    @network_interface = NetworkInterface.find(:first)
+    render :action => 'search'
   end
   
 end

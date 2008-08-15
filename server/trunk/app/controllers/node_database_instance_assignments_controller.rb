@@ -44,7 +44,7 @@ class NodeDatabaseInstanceAssignmentsController < ApplicationController
     @node_database_instance_assignment = NodeDatabaseInstanceAssignment.new
   end
 
-  # GET /node_database_instance_assignments/1;edit
+  # GET /node_database_instance_assignments/1/edit
   def edit
     @node_database_instance_assignment = NodeDatabaseInstanceAssignment.find(params[:id])
   end
@@ -111,7 +111,7 @@ class NodeDatabaseInstanceAssignmentsController < ApplicationController
     end
   end
   
-  # GET /node_database_instance_assignments/1;version_history
+  # GET /node_database_instance_assignments/1/version_history
   def version_history
     @node_database_instance_assignment = NodeDatabaseInstanceAssignment.find_with_deleted(params[:id])
     render :action => "version_table", :layout => false

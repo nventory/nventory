@@ -44,7 +44,7 @@ class AccountsController < ApplicationController
     @account = Account.new
   end
 
-  # GET /accounts/1;edit
+  # GET /accounts/1/edit
   def edit
     @account = Account.find(params[:id])
   end
@@ -95,10 +95,22 @@ class AccountsController < ApplicationController
     end
   end
   
-  # GET /customers/1;version_history
+  # GET /accounts/1/version_history
   def version_history
     @account = Account.find_with_deleted(params[:id])
     render :action => "version_table", :layout => false
   end
   
+  # GET /accounts/field_names
+  def field_names
+    super(Account)
+  end
+
+  # GET /accounts/search
+  def search
+    @account = Account.find(:first)
+    @exclude = ['password_hash', 'password_salt']
+    render :action => 'search'
+  end
+
 end

@@ -44,7 +44,7 @@ class DatacenterRackAssignmentsController < ApplicationController
     @datacenter_rack_assignment = DatacenterRackAssignment.new
   end
 
-  # GET /datacenter_rack_assignments/1;edit
+  # GET /datacenter_rack_assignments/1/edit
   def edit
     @datacenter_rack_assignment = DatacenterRackAssignment.find(params[:id])
   end
@@ -108,7 +108,7 @@ class DatacenterRackAssignmentsController < ApplicationController
     end
   end
   
-  # GET /datacenter_rack_assignments/1;version_history
+  # GET /datacenter_rack_assignments/1/version_history
   def version_history
     @datacenter_rack_assignment = DatacenterRackAssignment.find_with_deleted(params[:id])
     render :action => "version_table", :layout => false

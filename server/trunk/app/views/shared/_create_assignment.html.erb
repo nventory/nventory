@@ -1,11 +1,7 @@
 <% remote_form_for( (from + '_' + to + '_assignment').to_sym, :url => self.send(from + '_' + to + '_assignments_path') ) do |f| %>
   <p><%= to.underscore.titleize %>:
   
-  <%- if to == 'program' -%>
-    <%- to_array = Program.all_programs_ordered_by_customer_name_program_name.collect { |p| [ p.customer.name+": "+p.name, p.id ] } -%>
-  <%- else -%>
-    <%- to_array = to.camelize.constantize.find(:all, :order => 'name').collect { |r| [ r.name, r.id ] } -%>
-  <%- end -%>
+  <%- to_array = to.camelize.constantize.find(:all, :order => 'name').collect { |r| [ r.name, r.id ] } -%>
   
   <%= f.select( (to+'_id').to_sym, to_array, { :include_blank => true } ) %>
   <%= f.hidden_field( (from+'_id').to_sym, { :value => '0' } ) %>

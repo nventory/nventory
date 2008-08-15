@@ -11,11 +11,13 @@
 <p><strong>Location:</strong><br />
 <%= textilize_without_paragraph(h(@rack.location)) %></p>
 
-<p><strong>Notes:</strong><br />
-<%= textilize_without_paragraph(h(@rack.notes)) %></p>
+<p><strong>Description:</strong><br />
+<%= textilize_without_paragraph(h(@rack.description)) %></p>
 
 <p class="metadata"><strong>Created at:</strong> <%= h(@rack.created_at) %><br />
 <strong>Updated at:</strong> <%= h(@rack.updated_at) %></p>
+
+</div>
 
 <div class="relationship">
 
@@ -37,8 +39,11 @@
 
 </div> <!-- end relationship -->
 
+<div class="relationship">
 
-</div>
+<%= render :partial => 'shared/comments', :locals => { :object => @rack} %>
+
+</div> <!-- end relationship -->
 
 <%- if !@rack.deleted_at -%>
 <p><%= link_to 'Edit', edit_rack_path(@rack) %> | 

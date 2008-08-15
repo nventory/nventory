@@ -1,6 +1,7 @@
 class DatabaseInstance < ActiveRecord::Base
   
   acts_as_paranoid
+  acts_as_commentable
   
   has_one :node_database_instance_assignment, :dependent => :destroy
   

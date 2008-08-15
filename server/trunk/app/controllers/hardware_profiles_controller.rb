@@ -44,7 +44,7 @@ class HardwareProfilesController < ApplicationController
     @hardware_profile = HardwareProfile.new
   end
 
-  # GET /hardware_profiles/1;edit
+  # GET /hardware_profiles/1/edit
   def edit
     @hardware_profile = HardwareProfile.find(params[:id])
   end
@@ -95,10 +95,21 @@ class HardwareProfilesController < ApplicationController
     end
   end
   
-  # GET /datacenters/1;version_history
+  # GET /hardware_profiles/1/version_history
   def version_history
     @hardware_profile = HardwareProfile.find_with_deleted(params[:id])
     render :action => "version_table", :layout => false
+  end
+  
+  # GET /hardware_profiles/field_names
+  def field_names
+    super(HardwareProfile)
+  end
+
+  # GET /hardware_profiles/search
+  def search
+    @hardware_profile = HardwareProfile.find(:first)
+    render :action => 'search'
   end
   
 end

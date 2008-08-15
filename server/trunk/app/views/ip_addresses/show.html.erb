@@ -17,6 +17,12 @@
 
 </div>
 
+<div class="relationship">
+
+<%= render :partial => 'shared/comments', :locals => { :object => @ip_address} %>
+
+</div> <!-- end relationship -->
+
 <%- if !@ip_address.deleted_at -%>
 <p><%= link_to 'Edit', edit_ip_address_path(@ip_address) %> | 
 <%= link_to 'Delete', ip_address_path(@ip_address), :confirm => 'Are you sure?', :method => :delete %></p>

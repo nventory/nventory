@@ -48,7 +48,7 @@ class DatabaseInstancesController < ApplicationController
     end
   end
 
-  # GET /database_instances/1;edit
+  # GET /database_instances/1/edit
   def edit
     @database_instance = DatabaseInstance.find(params[:id])
   end
@@ -113,10 +113,21 @@ class DatabaseInstancesController < ApplicationController
     end
   end
   
-  # GET /database_instances/1;version_history
+  # GET /database_instances/1/version_history
   def version_history
     @database_instance = DatabaseInstance.find_with_deleted(params[:id])
     render :action => "version_table", :layout => false
+  end
+  
+  # GET /database_instances/field_names
+  def field_names
+    super(DatabaseInstance)
+  end
+
+  # GET /database_instances/search
+  def search
+    @database_instance = DatabaseInstance.find(:first)
+    render :action => 'search'
   end
   
 end

@@ -44,7 +44,7 @@ class SubnetsController < ApplicationController
     @subnet = Subnet.new
   end
 
-  # GET /subnets/1;edit
+  # GET /subnets/1/edit
   def edit
     @subnet = Subnet.find(params[:id])
   end
@@ -95,10 +95,21 @@ class SubnetsController < ApplicationController
     end
   end
   
-  # GET /subnets/1;version_history
+  # GET /subnets/1/version_history
   def version_history
     @subnet = Subnet.find_with_deleted(params[:id])
     render :action => "version_table", :layout => false
+  end
+  
+  # GET /subnets/field_names
+  def field_names
+    super(Subnet)
+  end
+
+  # GET /subnets/search
+  def search
+    @subnet = Subnet.find(:first)
+    render :action => 'search'
   end
   
 end

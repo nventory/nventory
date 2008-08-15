@@ -44,7 +44,7 @@ class VipsController < ApplicationController
     @vip = Vip.new
   end
 
-  # GET /vips/1;edit
+  # GET /vips/1/edit
   def edit
     @vip = Vip.find(params[:id])
   end
@@ -95,10 +95,21 @@ class VipsController < ApplicationController
     end
   end
   
-  # GET /vips/1;version_history
+  # GET /vips/1/version_history
   def version_history
     @vip = Vip.find_with_deleted(params[:id])
     render :action => "version_table", :layout => false
+  end
+  
+  # GET /vips/field_names
+  def field_names
+    super(Vip)
+  end
+
+  # GET /vips/search
+  def search
+    @vip = Vip.find(:first)
+    render :action => 'search'
   end
   
 end

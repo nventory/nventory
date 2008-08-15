@@ -208,6 +208,7 @@ class NodesController < ApplicationController
       includes[:hardware_profile] = true
       includes[[:network_interfaces => :ip_addresses]] = true
       includes[:node_groups] = true
+      includes[:comments] = true
     end
     
     logger.info "searchquery" + searchquery.to_yaml
@@ -280,7 +281,9 @@ class NodesController < ApplicationController
                                  :preferred_operating_system => {},
                                  :hardware_profile => {},
                                  :network_interfaces => { :include => :ip_addresses },
-                                 :node_groups => {}},
+                                 :node_groups => {},
+                                 :comments => {},
+                                 },
                              :dasherize => false) }
     end
   end
@@ -299,6 +302,7 @@ class NodesController < ApplicationController
       includes[:hardware_profile] = true
       includes[[:network_interfaces => :ip_addresses]] = true
       includes[:node_groups] = true
+      includes[:comments] = true
     end
 
     @node = Node.find(params[:id],
@@ -313,7 +317,9 @@ class NodesController < ApplicationController
                                :preferred_operating_system => {},
                                :hardware_profile => {},
                                :network_interfaces => { :include => :ip_addresses },
-                               :node_groups => {}},
+                               :node_groups => {},
+                               :comments => {},
+                               },
                              :dasherize => false) }
     end
   end
@@ -339,7 +345,9 @@ class NodesController < ApplicationController
     # If the user didn't specify an operating system id then find or
     # create one based on the OS info they did specify.
     if !params[:node].include?(:operating_system_id)
-      params[:node][:operating_system_id] = find_or_create_operating_system().id
+      if params.include?(:operating_system)
+        params[:node][:operating_system_id] = find_or_create_operating_system().id
+      end
     end
     # If the user didn't specify a hardware profile id then find or
     # create one based on the hardware info they did specify.
@@ -353,9 +361,9 @@ class NodesController < ApplicationController
     if !params[:node].include?(:status_id)
       status = nil
       if params.include?(:status) and !params[:status][:name].blank?
-        status = Status.find_or_create_by_name_and_relevant_model(params[:status][:name].to_s, 'Node')
+        status = Status.find_or_create_by_name(params[:status][:name].to_s)
       else
-        status = Status.find_or_create_by_name_and_relevant_model('setup', 'Node')
+        status = Status.find_or_create_by_name('setup')
       end
       params[:node][:status_id] = status.id
     end
@@ -368,19 +376,19 @@ class NodesController < ApplicationController
         # We have to perform this after saving the new node so that the
         # NICs can be associated with it.
         process_network_interfaces
+        # If the user specified a rack assignment then handle that
+        process_rack_assignment
+        
         flash[:notice] = 'Node was successfully created.'
         format.html { redirect_to node_url(@node) }
         format.js { 
           render(:update) { |page| 
             
-            # we expect this ajax creation to come from one of two places, the rack show page or the environment show page. Depending on which
+            # Depending on where the Ajax node creation comes from
             # we do something slightly different.
             if request.env["HTTP_REFERER"].include? "racks"
               page.replace_html 'create_node_assignment', :partial => 'shared/create_assignment', :locals => { :from => 'rack', :to => 'node' }
               page['rack_node_assignment_node_id'].value = @node.id
-            elsif request.env["HTTP_REFERER"].include? "environments"
-              page.replace_html 'create_node_assignment', :partial => 'shared/create_assignment', :locals => { :from => 'environment', :to => 'node' }
-              page['environment_node_assignment_node_id'].value = @node.id
             end
             
             page.hide 'new_node'
@@ -441,13 +449,15 @@ class NodesController < ApplicationController
     # then find or create a status based on the name.
     if !params[:node].include?(:status_id)
       if params.include?(:status) and !params[:status][:name].blank?
-        status = Status.find_or_create_by_name_and_relevant_model(params[:status][:name].to_s, 'Node')
+        status = Status.find_or_create_by_name(params[:status][:name].to_s)
         params[:node][:status_id] = status.id
       end
     end
 
     # If the user specified some network interface info then handle that
     process_network_interfaces
+    # If the user specified a rack assignment then handle that
+    process_rack_assignment
 
     respond_to do |format|
       if @node.update_attributes(params[:node])
@@ -497,18 +507,13 @@ class NodesController < ApplicationController
   
   # GET /nodes/field_names
   def field_names
-    fields_xml = ''
-    xm = Builder::XmlMarkup.new(:target => fields_xml, :indent => 2)
-    xm.instruct!
-    xm.field_names{
-      Node.content_columns_including_associations.each_pair do |assoc_name, columns|
-        columns.each { |column| xm.field_name("#{assoc_name}.#{column.name}") }
-      end
-    }
+    super(Node)
+  end
 
-    respond_to do |format|
-      format.xml { render :xml => fields_xml }
-    end
+  # GET /nodes/search
+  def search
+    @node = Node.find(:first)
+    render :action => 'search'
   end
   
   def find_or_create_operating_system
@@ -642,4 +647,40 @@ class NodesController < ApplicationController
   end
   private :process_network_interfaces
 
+  def process_rack_assignment
+    # If the user specified a rack assignment then handle that
+    if params.include?(:rack)
+      logger.info "User included rack assignment, handling it"
+      existing = RackNodeAssignment.find_by_node_id(@node.id)
+      if !existing.nil?
+        # Check to see if the existing assignment is correct
+        rack = nil
+        if !params[:rack][:id].blank?
+          if params[:rack][:id] != existing.rack.id
+            rack = Rack.find(params[:rack][:id])
+          end
+        elsif !params[:rack][:name].blank?
+          if params[:rack][:name] != existing.rack.name
+            rack = Rack.find_by_name(params[:rack][:name])
+          end
+        end
+        if !rack.nil?
+          existing.update_attributes(:rack => rack)
+        end
+      else
+        # Create a new assignment
+        rack = nil
+        if !params[:rack][:id].blank?
+          rack = Rack.find(params[:rack][:id])
+        elsif !params[:rack][:name].blank?
+          rack = Rack.find_by_name(params[:rack][:name])
+        end
+        if !rack.nil?
+          RackNodeAssignment.create(:rack => rack, :node => @node)
+        end
+      end
+    end
+  end
+  private :process_rack_assignment
+  
 end

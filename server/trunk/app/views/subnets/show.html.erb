@@ -15,21 +15,16 @@
 <p><strong>Description:</strong><br />
 <%= textilize_without_paragraph(h(@subnet.description)) %></p>
 
-<p><strong>Notes:</strong></p>
-<%- if @subnet.subnet_notes.length > 0 -%>
-<ul>
-<%- @subnet.subnet_notes.each do |note| %>
-<li><%= h(note.created_at) %>: <%= h(note.note) %></li>
-<%- end -%>
-</ul>
-<%- else -%>
-<p>This subnet does not have any notes.</p>
-<%- end -%>
-
 <p class="metadata"><strong>Created at:</strong> <%= h(@subnet.created_at) %><br />
 <strong>Updated at:</strong> <%= h(@subnet.updated_at) %></p>
 
 </div>
+
+<div class="relationship">
+
+<%= render :partial => 'shared/comments', :locals => { :object => @subnet} %>
+
+</div> <!-- end relationship -->
 
 <%- if !@subnet.deleted_at -%>
 <p><%= link_to 'Edit', edit_subnet_path(@subnet) %> | 

@@ -44,7 +44,7 @@ class OutletsController < ApplicationController
     @outlet = Outlet.new
   end
 
-  # GET /outlets/1;edit
+  # GET /outlets/1/edit
   def edit
     @outlet = Outlet.find(params[:id])
     respond_to do |format|
@@ -105,16 +105,27 @@ class OutletsController < ApplicationController
     end
   end
   
-  # GET /outlets/1;version_history
+  # GET /outlets/1/version_history
   def version_history
     @outlet = Outlet.find_with_deleted(params[:id])
     render :action => "version_table", :layout => false
   end
   
-  # GET /outlets/1;version_history
+  # GET /outlets/1/version_history
   def consumer
     @outlet = Outlet.find(params[:id])
     render :action => '_consumer', :layout => false
+  end
+  
+  # GET /outlets/field_names
+  def field_names
+    super(Outlet)
+  end
+
+  # GET /outlets/search
+  def search
+    @outlet = Outlet.find(:first)
+    render :action => 'search'
   end
   
 end

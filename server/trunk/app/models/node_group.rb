@@ -1,24 +1,24 @@
 class NodeGroup < ActiveRecord::Base
 
   acts_as_paranoid
+  acts_as_commentable
 
   has_many :subnets
-  has_many :node_group_notes, :dependent => :destroy
 
   # http://blog.hasmanythrough.com/2006/4/21/self-referential-through
   # First establish the relationship with the node group assignments
   has_many :assignments_as_parent,
            :foreign_key => 'parent_id',
            :class_name => 'NodeGroupNodeGroupAssignment',
-           :conditions => 'node_group_node_group_assignments.deleted_at IS NULL'
+           :dependent => :destroy
   has_many :assignments_as_child,
            :foreign_key => 'child_id',
            :class_name => 'NodeGroupNodeGroupAssignment',
-           :conditions => 'node_group_node_group_assignments.deleted_at IS NULL'
+           :dependent => :destroy
   # Then establish the relationship with the groups on the other end
   # of those assignments
-  has_many :parent_groups, :through => :assignments_as_child
-  has_many :child_groups,  :through => :assignments_as_parent
+  has_many :parent_groups, :through => :assignments_as_child, :conditions => 'node_group_node_group_assignments.deleted_at IS NULL'
+  has_many :child_groups,  :through => :assignments_as_parent, :conditions => 'node_group_node_group_assignments.deleted_at IS NULL'
 
   # This is used by the edit page in the view
   # http://lists.rubyonrails.org/pipermail/rails/2006-August/059801.html
@@ -29,7 +29,7 @@ class NodeGroup < ActiveRecord::Base
     nodes.map(&:id)
   end
 
-  has_many :node_group_node_assignments
+  has_many :node_group_node_assignments, :dependent => :destroy
   has_many :nodes, :through => :node_group_node_assignments, :conditions => 'node_group_node_assignments.deleted_at IS NULL'
 
   # These constraints are duplicates of constraints imposed at the

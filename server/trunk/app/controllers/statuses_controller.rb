@@ -44,7 +44,7 @@ class StatusesController < ApplicationController
     @status = Status.new
   end
 
-  # GET /statuses/1;edit
+  # GET /statuses/1/edit
   def edit
     @status = Status.find(params[:id])
   end
@@ -95,10 +95,21 @@ class StatusesController < ApplicationController
     end
   end
   
-  # GET /statuses/1;version_history
+  # GET /statuses/1/version_history
   def version_history
     @status = Status.find_with_deleted(params[:id])
     render :action => "version_table", :layout => false
+  end
+  
+  # GET /statuses/field_names
+  def field_names
+    super(Status)
+  end
+
+  # GET /statuses/search
+  def search
+    @status = Status.find(:first)
+    render :action => 'search'
   end
   
 end

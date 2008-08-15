@@ -1,16 +1,6 @@
 class DashboardController < ApplicationController
 
   def index
-    @function_type_counts = Hash.new
-    Node.find(:all).each do |n|
-      n.functions.each do |f|
-        if @function_type_counts[f.function_type].nil?
-          @function_type_counts[f.function_type] = 1
-        else
-          @function_type_counts[f.function_type] = @function_type_counts[f.function_type] + 1
-        end
-      end
-    end
   end
   
   def setup_sample_data
@@ -33,7 +23,7 @@ class DashboardController < ApplicationController
       hp1.power_supply_slot_count = 2
       hp1.power_supply_count = 1
       hp1.cards = ''
-      hp1.notes = 'Test Node Type'
+      hp1.description = 'Test Node Type'
       hp1.save
       
       # Some System Install Defaults
@@ -53,7 +43,7 @@ class DashboardController < ApplicationController
       hp2.power_supply_slot_count = 2
       hp2.power_supply_count = 1
       hp2.cards = ''
-      hp2.notes = 'Test Node Type 2'
+      hp2.description = 'Test Node Type 2'
       hp2.save
       
       # Some System Install Defaults
@@ -64,25 +54,27 @@ class DashboardController < ApplicationController
       os1.version_number = '5'
       os1.save
 
-      ft_web = FunctionType.create(:name => 'Web Server')
-      ft_file = FunctionType.create(:name => 'File Server')
-      ft_firewall = FunctionType.create(:name => 'Firewall')
-      ft_dbserver = FunctionType.create(:name => 'Database Server', :enables_database_instance_access => true)
-      ft_pdu = FunctionType.create(:name => 'PDU')
-      ft_switch = FunctionType.create(:name => 'Network Switch')
-
-      f1 = Function.new(:name => 'Apache Web Server', :function_type => ft_web, :notes => 'Web Server')
-      f1.save
-      f11 = Function.new(:name => 'lighttpd Web Server', :function_type => ft_web, :notes => 'Web Server')
-      f11.save
-      f4 = Function.new(:name => 'Primary Firewall', :function_type => ft_firewall, :notes => 'Security Server')
-      f4.save
-      f5 = Function.new(:name => 'MySQL Master DB Server', :function_type => ft_dbserver, :notes => 'Database Server')
-      f5.save
-      f6 = Function.new(:name => 'PDU', :function_type => ft_pdu, :notes => 'Power Distribution Unit')
-      f6.save
-      f7 = Function.new(:name => 'Primary Network Switch', :function_type => ft_switch, :notes => 'Network Switch')
-      f7.save
+      ng1 = NodeGroup.new(:name => 'web-server', :description => 'All Types of Web Servers')
+      ng1.save
+      ng2 = NodeGroup.new(:name => 'apache-server', :description => 'Apache Web Server')
+      ng2.save
+      ng3 = NodeGroup.new(:name => 'nginx-server', :description => 'nginx Web Server')
+      ng3.save
+      ng4 = NodeGroup.new(:name => 'firewall', :description => 'Firewall')
+      ng4.save
+      ng5 = NodeGroup.new(:name => 'firewall-primary', :description => 'Primary Firewall')
+      ng5.save
+      ng6 = NodeGroup.new(:name => 'db', :description => 'DB Server')
+      ng6.save
+      ng7 = NodeGroup.new(:name => 'db-mysql', :description => 'MySQL DB Server')
+      ng7.save
+      ng8 = NodeGroup.new(:name => 'db-mysql-master', :description => 'MySQL Master DB Server')
+      ng8.save
+      ng9 = NodeGroup.new(:name => 'pdu', :description => 'Power Distribution Unit')
+      ng9.save
+      ng10 = NodeGroup.new(:name => 'network-switch', :description => 'Network Switch')
+      ng10.save
+      # FIXME: Should create node_group_node_group_assignements to demonstrate hierarchy
 
       # Set the color and U height of PDU
       sunny = HardwareProfile.find_by_name('SunFireX4100')
@@ -141,31 +133,6 @@ class DashboardController < ApplicationController
         
       }
       
-      # Create some customers
-      apple = Customer.create(:name => 'Apple')
-      google = Customer.create(:name => 'Google')
-      
-      running = Status.find_by_name('Running')
-      
-      apple_quicktime_trailers = Program.create(:name => 'QuickTime Trailers', :customer => apple, :status => running)
-      apple_developer_training = Program.create(:name => 'ADC Training', :customer => apple, :status => running)
-      apple_wwdc_2006_archive = Program.create(:name => 'WWDC 2006 Archive', :customer => apple, :status => running)
-      
-      google_you_tube = Program.create(:name => 'YouTube', :customer => google, :status => running)
-      google_google_video = Program.create(:name => 'Google Video', :customer => google, :status => running)
-      google_you_tube = Program.create(:name => 'YouTube', :customer => google, :status => running)
-
-      env1 = Environment.create(:name => 'env1')
-      EnvironmentProgramAssignment.create(:environment => env1, :program => apple_quicktime_trailers)
-      EnvironmentProgramAssignment.create(:environment => env1, :program => apple_developer_training)
-      EnvironmentProgramAssignment.create(:environment => env1, :program => apple_wwdc_2006_archive)
-      
-      (1..9).to_a.each { |i|
-        node = Node.find_by_name('host'+i.to_s)
-        EnvironmentNodeAssignment.create(:environment => env1, :node => node)
-      }
-      
-
     end
   end
 

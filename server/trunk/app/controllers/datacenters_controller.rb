@@ -13,11 +13,22 @@ class DatacentersController < ApplicationController
       sort = 'datacenters.' + Datacenter.default_search_attribute
     end
     
+    includes = {}
+    # The data we render to XML includes some data from associations.
+    # If we don't include those associations then N SQL calls result
+    # as that data is looked up row by row.
+    if params[:format] && params[:format] == 'xml'
+      includes[[:racks => :nodes]] = true
+    end
+
     # XML doesn't get pagination
     if params[:format] && params[:format] == 'xml'
-      @objects = Datacenter.find(:all, :order => sort)
+      @objects = Datacenter.find(:all,
+                                 :include => includes.keys,
+                                 :order => sort)
     else
       @objects = Datacenter.paginate(:all,
+                                     :include => includes.keys,
                                      :order => sort,
                                      :page => params[:page])
     end
@@ -25,6 +36,10 @@ class DatacentersController < ApplicationController
     respond_to do |format|
       format.html # index.html.erb
       format.xml  { render :xml => @objects.to_xml(:dasherize => false) }
+      format.xml  { render :xml => @objects.to_xml(
+                               :include => {
+                                 :racks => { :include => :nodes }},
+                             :dasherize => false) }
     end
     
   end
@@ -32,11 +47,23 @@ class DatacentersController < ApplicationController
   # GET /datacenters/1
   # GET /datacenters/1.xml
   def show
-    @datacenter = Datacenter.find_with_deleted(params[:id])
+    includes = {}
+    # The data we render to XML includes some data from associations.
+    # If we don't include those associations then N SQL calls result
+    # as that data is looked up row by row.
+    if params[:format] && params[:format] == 'xml'
+      includes[[:racks => :nodes]] = true
+    end
+
+    @datacenter = Datacenter.find(params[:id],
+                                  :include => includes.keys)
 
     respond_to do |format|
       format.html # show.html.erb
-      format.xml  { render :xml => @datacenter.to_xml(:dasherize => false) }
+      format.xml  { render :xml => @datacenter.to_xml(
+                               :include => {
+                                 :racks => { :include => :nodes }},
+                             :dasherize => false) }
     end
   end
 
@@ -45,7 +72,7 @@ class DatacentersController < ApplicationController
     @datacenter = Datacenter.new
   end
 
-  # GET /datacenters/1;edit
+  # GET /datacenters/1/edit
   def edit
     @datacenter = Datacenter.find(params[:id])
   end
@@ -105,15 +132,26 @@ class DatacentersController < ApplicationController
     end
   end
   
-  # GET /datacenters/1;version_history
+  # GET /datacenters/1/version_history
   def version_history
     @datacenter = Datacenter.find_with_deleted(params[:id])
     render :action => "version_table", :layout => false
   end
   
-  # GET /racks/1;visualization
+  # GET /datacenters/1/visualization
   def visualization
     @datacenter = Datacenter.find_with_deleted(params[:id])
+  end
+  
+  # GET /datacenters/field_names
+  def field_names
+    super(Datacenter)
+  end
+
+  # GET /datacenters/search
+  def search
+    @datacenter = Datacenter.find(:first)
+    render :action => 'search'
   end
   
 end

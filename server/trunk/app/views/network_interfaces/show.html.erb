@@ -31,6 +31,12 @@
 
 </div>
 
+<div class="relationship">
+
+<%= render :partial => 'shared/comments', :locals => { :object => @network_interface} %>
+
+</div> <!-- end relationship -->
+
 <%- if !@network_interface.deleted_at -%>
 <p><%= link_to 'Edit', edit_network_interface_path(@network_interface) %> | 
 <%= link_to 'Delete', network_interface_path(@network_interface), :confirm => 'Are you sure?', :method => :delete %></p>

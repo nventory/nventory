@@ -1,9 +1,9 @@
 class HardwareProfile < ActiveRecord::Base
   
   acts_as_paranoid
+  acts_as_commentable
   
   has_many :nodes
-  has_many :hardware_profile_notes, :dependent => :destroy
   
   validates_presence_of :name
   validates_uniqueness_of :name

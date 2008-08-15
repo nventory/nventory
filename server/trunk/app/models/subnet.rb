@@ -1,9 +1,9 @@
 class Subnet < ActiveRecord::Base
 
   acts_as_paranoid
+  acts_as_commentable
 
   belongs_to :node_group
-  has_many :subnet_notes, :dependent => :destroy
 
   # These constraints are duplicates of constraints imposed at the
   # database layer (see the relevant migration file for details).

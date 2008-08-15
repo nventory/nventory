@@ -11,17 +11,6 @@
 <p><strong>Description:</strong><br />
 <%= textilize_without_paragraph(h(@vip.description)) %></p>
 
-<p><strong>Notes:</strong></p>
-<%- if @vip.vip_notes.length > 0 -%>
-<ul>
-<%- @vip.vip_notes.each do |note| %>
-<li><%= h(note.created_at) %>: <%= h(note.note) %></li>
-<%- end -%>
-</ul>
-<%- else -%>
-<p>This VIP does not have any notes.</p>
-<%- end -%>
-
 <p class="metadata"><strong>Created at:</strong> <%= h(@vip.created_at) %><br />
 <strong>Updated at:</strong> <%= h(@vip.updated_at) %></p>
 
@@ -32,6 +21,12 @@
 <div id="datacenter_vip_assignments">
 <%= render :partial => 'datacenter_assignments', :locals => { :vip => @vip} %>
 </div> <!-- end datacenter_vip_assignments -->
+
+</div> <!-- end relationship -->
+
+<div class="relationship">
+
+<%= render :partial => 'shared/comments', :locals => { :object => @vip} %>
 
 </div> <!-- end relationship -->
 

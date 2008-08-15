@@ -31,11 +31,11 @@ module Juixe
         # Helper class method to lookup comments for
         # the mixin commentable type written by a given user.  
         # This method is NOT equivalent to Comment.find_comments_for_user
-        def find_comments_by_user(user) 
+        def find_comments_by_user(account) 
           commentable = ActiveRecord::Base.send(:class_name_of_active_record_descendant, self).to_s
           
           Comment.find(:all,
-            :conditions => ["user_id = ? and commentable_type = ?", user.id, commentable],
+            :conditions => ["user_id = ? and commentable_type = ?", account.id, commentable],
             :order => "created_at DESC"
           )
         end

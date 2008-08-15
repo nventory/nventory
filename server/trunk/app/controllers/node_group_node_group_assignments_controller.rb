@@ -44,7 +44,7 @@ class NodeGroupNodeGroupAssignmentsController < ApplicationController
     @node_group_node_group_assignment = NodeGroupNodeGroupAssignment.new
   end
 
-  # GET /node_group_node_group_assignments/1;edit
+  # GET /node_group_node_group_assignments/1/edit
   def edit
     @node_group_node_group_assignment = NodeGroupNodeGroupAssignment.find(params[:id])
   end
@@ -129,7 +129,7 @@ class NodeGroupNodeGroupAssignmentsController < ApplicationController
     end
   end
   
-  # GET /node_group_node_group_assignments/1;version_history
+  # GET /node_group_node_group_assignments/1/version_history
   def version_history
     @node_group_node_group_assignment = NodeGroupNodeGroupAssignment.find_with_deleted(params[:id])
     render :action => "version_table", :layout => false

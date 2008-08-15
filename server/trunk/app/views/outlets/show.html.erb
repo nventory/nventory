@@ -14,6 +14,12 @@
 
 </div>
 
+<div class="relationship">
+
+<%= render :partial => 'shared/comments', :locals => { :object => @outlet} %>
+
+</div> <!-- end relationship -->
+
 <%- if !@outlet.deleted_at -%>
 <p><%= link_to 'Edit', edit_outlet_path(@outlet) %> | 
 <%= link_to 'Delete', outlet_path(@outlet), :confirm => 'Are you sure?', :method => :delete %></p>

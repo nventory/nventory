@@ -6,17 +6,18 @@
 
 <td>
 <%= link_to 'New ' + objects.first.class.to_s.titleize, self.send('new_' + objects.first.class.to_s.underscore + '_path') %><br/>
-
 <%= page_entries_info objects %>
 </td>
 
 <td align="right">
-
-FIXME: Advanced Search<br/>
-
-Search by <%= objects.first.class.default_search_attribute %>: <% form_tag '/' + objects.first.class.to_s.underscore.pluralize, :method => :get do -%>
-  <%= text_field_tag objects.first.class.default_search_attribute %>
-<% end %>
+<% if self.respond_to?('search_' + objects.first.class.to_s.underscore.pluralize + '_path') -%>
+  <%= link_to 'Advanced Search', self.send('search_' + objects.first.class.to_s.underscore.pluralize + '_path') %><br/>
+<% end -%>
+<% if objects.first.class.respond_to?('default_search_attribute') -%>
+  Search by <%= objects.first.class.default_search_attribute %>: <% form_tag '/' + objects.first.class.to_s.underscore.pluralize, :method => :get do -%>
+    <%= text_field_tag objects.first.class.default_search_attribute -%>
+  <% end %>
+<% end -%>
 </td>
 
 </tr>

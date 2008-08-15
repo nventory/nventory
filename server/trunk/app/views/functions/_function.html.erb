@@ -1,3 +1,0 @@
-<p><strong>Name</strong> <em>*</em> <br /><%= f.text_field :name %></p>
-<p><strong>Type:</strong> <em>*</em> <br /><%= f.select :function_type_id, FunctionType.find(:all, :order => 'name').collect { |c| [ c.name, c.id ] }, { :include_blank => true } %></p>
-<p><strong>Notes</strong> <br /><%= f.text_area :notes %></p>

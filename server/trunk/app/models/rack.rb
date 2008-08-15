@@ -1,6 +1,7 @@
 class Rack < ActiveRecord::Base
   
   acts_as_paranoid
+  acts_as_commentable
   
   has_one :datacenter_rack_assignment, :dependent => :destroy
   # has_one :through support was recently added to Rails

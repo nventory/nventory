@@ -44,7 +44,7 @@ class RackNodeAssignmentsController < ApplicationController
     @rack_node_assignment = RackNodeAssignment.new
   end
 
-  # GET /rack_node_assignments/1;edit
+  # GET /rack_node_assignments/1/edit
   def edit
     @rack_node_assignment = RackNodeAssignment.find(params[:id])
   end
@@ -111,7 +111,7 @@ class RackNodeAssignmentsController < ApplicationController
     end
   end
   
-  # GET /rack_node_assignments/1;version_history
+  # GET /rack_node_assignments/1/version_history
   def version_history
     @rack_node_assignment = RackNodeAssignment.find_with_deleted(params[:id])
     render :action => "version_table", :layout => false

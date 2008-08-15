@@ -1,6 +1,7 @@
 class IpAddress < ActiveRecord::Base
 
   acts_as_paranoid
+  acts_as_commentable
 
   belongs_to :network_interface
   # Fake belongs_to :node, :through => :network_interface

@@ -1,8 +1,0 @@
-<p><strong>Name</strong> <em>*</em> <br /> <%= f.text_field :name %></p>
-<p><strong>Customer:</strong> <em>*</em> <br /><%= f.select :customer_id, Customer.find(:all, :order => 'name').collect { |c| [ c.name, c.id ] }, { :include_blank => true } %></p>
-<p><strong>Status:</strong> <em>*</em> <br /><%= f.select :status_id, Status.allowed_statuses_for_model(@program).collect { |s| [ s.name, s.id ] }, { :include_blank => true } %></p>
-<p><strong>Main URL</strong> <br /> <%= f.text_field :main_url %></p>
-<p><strong>Stream URL</strong> <br /> <%= f.text_field :stream_url %></p>
-<p><strong>Analytics URL</strong> <br /> <%= f.text_field :analytics_url %></p>
-<p><strong>Reporting URL</strong> <br /> <%= f.text_field :reporting_url %></p>
-<p><strong>Notes</strong> <br /> <%= f.text_area :notes, {"cols" => 30, "rows" => 4}  %></p>

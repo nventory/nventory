@@ -1,14 +1,15 @@
 class Node < ActiveRecord::Base
   
   acts_as_paranoid
+  acts_as_commentable
   
   has_one :rack_node_assignment, :dependent => :destroy
+  # has_one :through support was recently added to Rails
+  # http://dev.rubyonrails.org/ticket/4756
+  # Once that makes it into a version we can run this can get
+  # uncommented and the rack method below can go away.
+  #has_one :rack, :through => :rack_node_assignment
   
-  has_many :environment_node_assignments, :dependent => :destroy
-  has_many :environments, :through => :environment_node_assignments, :conditions => 'environment_node_assignments.deleted_at IS NULL'
-
-  has_many :node_notes, :dependent => :destroy
-
   belongs_to :hardware_profile
   belongs_to :operating_system
   belongs_to :preferred_operating_system,
@@ -16,20 +17,18 @@ class Node < ActiveRecord::Base
              :foreign_key => 'preferred_operating_system_id'
   belongs_to :status
   
-  has_many :node_function_assignments, :dependent => :destroy
-  has_many :functions, :through => :node_function_assignments, :conditions => 'node_function_assignments.deleted_at IS NULL'
-
   has_many :node_group_node_assignments, :dependent => :destroy
   has_many :node_groups, :through => :node_group_node_assignments, :conditions => 'node_group_node_assignments.deleted_at IS NULL'
   
   has_many :node_database_instance_assignments
   has_many :database_instances, :through => :node_database_instance_assignments, :conditions => 'node_database_instance_assignments.deleted_at IS NULL'
   
+  # :dependent => :destroy?
   has_many :produced_outlets, :class_name => "Outlet", :foreign_key => "producer_id", :order => "name"
   has_many :consumed_outlets, :class_name => "Outlet", :foreign_key => "consumer_id", :order => "name"
 
   has_many :network_interfaces, :dependent => :destroy
-  has_many :ip_addresses, :through => :network_interfaces
+  has_many :ip_addresses, :through => :network_interfaces, :conditions => 'network_interfaces.deleted_at IS NULL'
 
   validates_presence_of :name, :hardware_profile_id, :status_id
   
@@ -103,42 +102,24 @@ class Node < ActiveRecord::Base
     return console_outlets
   end
   
-  def is_database_server?
-    answer = false
-    self.functions.each { |f| answer = true if f.function_type.enables_database_instance_access?}
-    return answer
-  end
-  
   def visualization_summary
     # This is the text we'll show in a node box when we visualize a rack
     delimiter = ' | '
     # FIXME: This should be replaced with something that doesn't use
     # functions.  Seems like if we want to treat PDUs, switches and console
     # servers specially we should flag their hardware profiles.
-    function_names = []
-    self.functions.each { |f| function_names << f.name }
-    if function_names.include?("PDU") or function_names.include?("Network Switch")
+    #function_names = []
+    #self.functions.each { |f| function_names << f.name }
+    #if function_names.include?("PDU") or function_names.include?("Network Switch")
       # PDUs and switches should display: name, IP, hwprofile, # of total outlets, free outlets
-      active_outlet_count = 0
-      self.outlets.each { |o|
-        active_outlet_count = active_outlet_count + 1 unless o.consumer.nil?
-      }
-      return self.name + delimiter + self.hardware_profile.name + delimiter + active_outlet_count.to_s + '/' + self.hardware_profile.outlet_count.to_s
-    else
-      return self.name + delimiter + self.hardware_profile.name + delimiter + node_groups_as_string_list
-    end
-  end
-  
-  def functions_as_string_list
-    function_names = []
-    self.functions.each { |f| function_names << f.name }
-    function_names * ', '
-  end
-  
-  def node_groups_as_string_list
-    node_group_names = []
-    self.node_groups.each { |ng| node_group_names << ng.name }
-    node_group_names * ', '
+      #active_outlet_count = 0
+      #self.outlets.each { |o|
+      #  active_outlet_count = active_outlet_count + 1 unless o.consumer.nil?
+      #}
+      #return self.name + delimiter + self.hardware_profile.name + delimiter + active_outlet_count.to_s + '/' + self.hardware_profile.outlet_count.to_s
+    #else
+      return self.name + delimiter + self.hardware_profile.name
+    #end
   end
   
   def update_outlets
@@ -194,13 +175,15 @@ class Node < ActiveRecord::Base
     end
   end
 
-  def self.content_columns_including_associations
-    all_columns = {}
-    columns[node] = self.content_columns
-    self.reflect_on_all_associations.each { |assoc| columns[assoc.name] = assoc.klass.content_columns }
-    return all_columns
+  # This can go away eventually, see above
+  def rack
+    if self.rack_node_assignment
+     return self.rack_node_assignment.rack
+    else
+      return nil
+    end
   end
-
+  
   def before_destroy
     raise "A node can not be destroyed that has database instances assigned to it." if !self.node_database_instance_assignments.nil? && self.node_database_instance_assignments.count > 0
   end

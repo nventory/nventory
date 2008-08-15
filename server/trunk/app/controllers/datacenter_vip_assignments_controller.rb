@@ -44,7 +44,7 @@ class DatacenterVipAssignmentsController < ApplicationController
     @datacenter_vip_assignment = DatacenterVipAssignment.new
   end
 
-  # GET /datacenter_vip_assignments/1;edit
+  # GET /datacenter_vip_assignments/1/edit
   def edit
     @datacenter_vip_assignment = DatacenterVipAssignment.find(params[:id])
   end
@@ -111,7 +111,7 @@ class DatacenterVipAssignmentsController < ApplicationController
     end
   end
   
-  # GET /datacenter_vip_assignments/1;version_history
+  # GET /datacenter_vip_assignments/1/version_history
   def version_history
     @datacenter_vip_assignment = DatacenterVipAssignment.find_with_deleted(params[:id])
     render :action => "version_table", :layout => false
