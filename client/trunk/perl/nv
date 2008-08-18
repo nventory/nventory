@@ -260,9 +260,20 @@ if ($debug)
 
 if ($getfieldnames)
 {
-	# FIXME: This needs server-side support
-	die 'FIXME';
-	#print 'Fields: ', join(', ', @fields), "\n";
+	my @field_names = nVentory::Client::get_field_names($objecttype);
+	foreach my $field_name_entry (@field_names)
+	{
+		my ($field_name) = split(' ', $field_name_entry);
+		my ($shortcut, $shortcut_field_name);
+		while (($shortcut, $shortcut_field_name) = each %SEARCH_SHORTCUTS)
+		{
+			if ($field_name eq $shortcut_field_name)
+			{
+				$field_name_entry .= " ($shortcut)"
+			}
+		}
+		print $field_name_entry, "\n";
+	}
 	exit;
 }
 if ($register)
