@@ -10,3 +10,6 @@ then
 	rm /tmp/root_crontab
 fi
 
+# Run a one-time registration right away
+opsdb --register
+
