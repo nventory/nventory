@@ -145,76 +145,38 @@ sub _get_ua
 	return $ua;
 }
 
-sub _xml_to_hash
+sub _xml_to_perl
 {
 	my ($xmlnode) = @_;
 	
-	my %hash;
-	
-	foreach my $child ($xmlnode->findnodes('*'))
+	# The server includes a hint as to the type of data structure
+	# in the XML
+	if ($xmlnode->getAttribute('type') &&
+		$xmlnode->getAttribute('type') eq 'array')
 	{
-		my $field = $child->nodeName;
-
-		if ($child->childNodes->size <= 1)
+		my @array;
+		foreach my $child ($xmlnode->findnodes('*'))
 		{
-			$hash{$field} = $child->string_value;
+			push @array, _xml_to_perl($child);
 		}
-		else
-		{
-			my $childhashref = _xml_to_hash($child);
-
-			# The XML can contain more than one element with the same
-			# name, if for example the node has multiple network
-			# interfaces then there will be multiple elements named
-			# <network_interface> representing each NIC.  (I.e. the
-			# object has a has_many relationship to another object in
-			# Rails.)  Put those into an array in the hash.
-			#
-			# For example:
-			# <objects>
-			#   <object>
-			#     <id>1</id>
-			#   </object>
-			#   <object>
-			#     <id>2</id>
-			#   </objects>
-			# </object>
-			if (exists $hash{$field})
-			{
-				# We don't know if advance that there will be multiple
-				# elements with the same name, so there may just be
-				# a single entry in the hash currently.  If so we need
-				# to convert that into an array.
-				if (ref $hash{$field} ne 'ARRAY')
-				{
-					$hash{$field} = [ $hash{$field}, $childhashref ];
-				}
-				else
-				{
-					push @{$hash{$field}}, $childhashref;
-				}
-			}
-			else
-			{
-				$hash{$field} = $childhashref;
-			}
-		}
-	}
-	
-	# If, as mentioned above, there were multiple elements of the same
-	# name in the node we parsed, and if they were in fact the only
-	# thing in the node, so that the hash we've built has just one key
-	# that points to an array, then return a reference to the array
-	# rather than a reference to the hash.  That eliminates a level of
-	# hierarchy in the resulting hash that isn't providing any extra
-	# information, and allows the resulting hash to match more closely
-	# with the way the objects are referred to on the server side.
-	if (scalar(keys %hash) == 1 && ref $hash{(keys %hash)[0]} eq 'ARRAY')
-	{
-		return $hash{(keys %hash)[0]};
+		return \@array;
 	}
 	else
 	{
+		my %hash;
+		foreach my $child ($xmlnode->findnodes('*'))
+		{
+			my $field = $child->nodeName;
+
+			if ($child->childNodes->size <= 1)
+			{
+				$hash{$field} = $child->string_value;
+			}
+			else
+			{
+				$hash{$field} = _xml_to_perl($child);
+			}
+		}
 		return \%hash;
 	}
 }
@@ -287,9 +249,9 @@ sub get_objects
 	my %results;
 	foreach my $xmlnode ($doc->findnodes("/$objecttype/*"))
 	{
-		my $dataref = _xml_to_hash($xmlnode);
+		my $dataref = _xml_to_perl($xmlnode);
 		my %data = %$dataref;
-		my $name = $data{name};
+		my $name = $data{name} || $data{id};
 		$results{$name} = \%data;
 	}
 
@@ -299,6 +261,29 @@ sub get_objects
 		print Dumper(\%results);
 	}
 	return %results;
+}
+
+sub get_field_names
+{
+	my ($objecttype) = @_;
+	my $url = URI->new("$SERVER/$objecttype/field_names.xml");
+	my $ua = _get_ua();
+	warn "GET URL: $url\n" if ($debug);
+	my $response = $ua->get($url);
+	if (!$response->is_success)
+	{
+		die $response->status_line;
+	}
+
+	my $parser = XML::LibXML->new();
+	print $response->content if ($debug);
+	my $doc = $parser->parse_string($response->content);
+	my @field_names;
+	foreach my $xmlnode ($doc->findnodes("/field_names/*"))
+	{
+		push @field_names, $xmlnode->string_value;
+	}
+	return @field_names;
 }
 
 sub get_expanded_nodegroup
@@ -311,7 +296,7 @@ sub get_expanded_nodegroup
 	{
 		push(@nodes, $node->{name});
 	}
-	foreach my $child_group (@{$results{$nodegroup}->{node_groups}})
+	foreach my $child_group (@{$results{$nodegroup}->{child_groups}})
 	{
 		push(@nodes, get_expanded_nodegroup($child_group->{name}));
 	}
@@ -429,6 +414,8 @@ sub register
 	$data{os_memory} = nVentory::OSInfo::getosmemory();
 	$data{swap} = nVentory::OSInfo::getswapmemory();
 	$data{os_processor_count} = nVentory::OSInfo::get_os_cpu_count();
+	$data{timezone} = nVentory::OSInfo::get_timezone();
+	$data{virtual_client_ids} = nVentory::OSInfo::get_virtual_client_ids();
 
 	#
 	# Gather hardware-related information
@@ -488,6 +475,19 @@ sub register
 	$data{"network_interfaces[authoritative]"} = 1;
 
 	$data{uniqueid} = nVentory::HardwareInfo::get_uniqueid();
+
+	if ($data{'hardware_profile[model]'} eq 'VMware Virtual Platform')
+	{
+		my %results = get_objects('nodes', {'virtual_client_ids' => [$data{uniqueid}]}, {}, 'autoreg');
+		if (scalar keys %results == 1)
+		{
+			$data{virtual_parent_node_id} = $results{(keys(%results))[0]}->{id};
+		}
+		elsif (scalar keys %results > 1)
+		{
+			warn "Multiple hosts claim this virtual client: ", join(',', sort keys %results), "\n";
+		}
+	}
 
 	#
 	# Report data to server
@@ -704,7 +704,7 @@ sub add_nodegroups_to_nodegroups
 
 		%merged_nodegroups = %child_groups;
 
-		foreach my $current_child (@{$parent_groups{$parent_group}->{node_groups}})
+		foreach my $current_child (@{$parent_groups{$parent_group}->{child_groups}})
 		{
 			# The child group entries in a hash of node groups are
 			# not identical to the parent group entries, since the parent
@@ -736,7 +736,7 @@ sub remove_nodegroups_from_nodegroups
 	{
 		my %desired_child_groups;
 
-		foreach my $current_child (@{$parent_groups{$parent_group}->{node_groups}})
+		foreach my $current_child (@{$parent_groups{$parent_group}->{child_groups}})
 		{
 			# The child group entries in a hash of node groups are
 			# not identical to the parent group entries, since the parent
