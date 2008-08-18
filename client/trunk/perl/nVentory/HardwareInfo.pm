@@ -37,7 +37,8 @@ sub get_host_manufacturer
 		{
 			_getdmidata();
 		}
-		elsif ($os eq 'SunOS' && nVentory::OSInfo::getosarch() eq 'i386')
+		elsif ($os eq 'SunOS' &&
+			(nVentory::OSInfo::getosarch() eq 'i386' || nVentory::OSInfo::getosarch() eq 'amd64'))
 		{
 			if (nVentory::OSInfo::compare_versions(nVentory::OSInfo::getosversion(), '5.10') >= 0)
 			{
@@ -136,7 +137,8 @@ sub get_host_serial
 		{
 			_getdmidata();
 		}
-		elsif ($os eq 'SunOS' && nVentory::OSInfo::getosarch() eq 'i386' &&
+		elsif ($os eq 'SunOS' &&
+			(nVentory::OSInfo::getosarch() eq 'i386' || nVentory::OSInfo::getosarch() eq 'amd64') &&
 			nVentory::OSInfo::compare_versions(nVentory::OSInfo::getosversion(), '5.10') >= 0)
 		{
 			_getsmbiosdata();
@@ -196,7 +198,8 @@ sub get_cpu_manufacturer
 		{
 			_getdmidata();
 		}
-		elsif ($os eq 'SunOS' && nVentory::OSInfo::getosarch() eq 'i386')
+		elsif ($os eq 'SunOS' &&
+			(nVentory::OSInfo::getosarch() eq 'i386' || nVentory::OSInfo::getosarch() eq 'amd64'))
 		{
 			if (nVentory::OSInfo::compare_versions(nVentory::OSInfo::getosversion(), '5.10') >= 0)
 			{
@@ -383,7 +386,8 @@ sub get_cpu_count
 		{
 			_getdmidata();
 		}
-		elsif ($os eq 'SunOS' && nVentory::OSInfo::getosarch() eq 'i386' &&
+		elsif ($os eq 'SunOS' &&
+			(nVentory::OSInfo::getosarch() eq 'i386' || nVentory::OSInfo::getosarch() eq 'amd64') &&
 			nVentory::OSInfo::compare_versions(nVentory::OSInfo::getosversion(), '5.10') >= 0)
 		{
 			_getsmbiosdata();
@@ -479,6 +483,23 @@ sub get_cpu_core_count
 			{
 				$cpu_core_count = scalar keys %cores;
 			}
+			elsif (-x '/usr/sbin/esxcfg-info')
+			{
+				# But on VMware ESX server the ESX utilities manage to
+				# gather the core count from somewhere, so snag the data
+				# from there
+				warn "Running '/usr/sbin/esxcfg-info'" if ($debug);
+				open my $esxcfgfh, '-|', '/usr/sbin/esxcfg-info'
+					or die "open /usr/sbin/esxcfg-info: $!";
+				while (<$esxcfgfh>)
+				{
+					if (/Num Cores\.+(\d+)/)
+					{
+						$cpu_core_count = $1;
+					}
+				}
+				close $esxcfgfh;
+			}
 		}
 		elsif ($os eq 'FreeBSD')
 		{
@@ -526,7 +547,8 @@ sub get_cpu_socket_count
 		{
 			_getdmidata();
 		}
-		elsif ($os eq 'SunOS' && nVentory::OSInfo::getosarch() eq 'i386' &&
+		elsif ($os eq 'SunOS' &&
+			(nVentory::OSInfo::getosarch() eq 'i386' || nVentory::OSInfo::getosarch() eq 'amd64') &&
 			nVentory::OSInfo::compare_versions(nVentory::OSInfo::getosversion(), '5.10') >= 0)
 		{
 			_getsmbiosdata();
@@ -559,7 +581,8 @@ sub get_physical_memory
 		{
 			_getdmidata();
 		}
-		elsif ($os eq 'SunOS' && nVentory::OSInfo::getosarch() eq 'i386' &&
+		elsif ($os eq 'SunOS' &&
+			(nVentory::OSInfo::getosarch() eq 'i386' || nVentory::OSInfo::getosarch() eq 'amd64') &&
 			nVentory::OSInfo::compare_versions(nVentory::OSInfo::getosversion(), '5.10') >= 0)
 		{
 			_getsmbiosdata();
@@ -617,7 +640,8 @@ sub get_physical_memory_sizes
 		{
 			_getdmidata();
 		}
-		elsif ($os eq 'SunOS' && nVentory::OSInfo::getosarch() eq 'i386' &&
+		elsif ($os eq 'SunOS' &&
+			(nVentory::OSInfo::getosarch() eq 'i386' || nVentory::OSInfo::getosarch() eq 'amd64') &&
 			nVentory::OSInfo::compare_versions(nVentory::OSInfo::getosversion(), '5.10') >= 0)
 		{
 			_getsmbiosdata();
@@ -693,7 +717,8 @@ sub get_uniqueid
 				}
 			}
 		}
-		elsif ($os eq 'SunOS' && nVentory::OSInfo::getosarch() eq 'i386' &&
+		elsif ($os eq 'SunOS' &&
+			(nVentory::OSInfo::getosarch() eq 'i386' || nVentory::OSInfo::getosarch() eq 'amd64') &&
 			nVentory::OSInfo::compare_versions(nVentory::OSInfo::getosversion(), '5.10') >= 0)
 		{
 			_getsmbiosdata();
@@ -727,6 +752,10 @@ sub _getdmidata
 	my $temp_cpu_manufacturer;
 	my $temp_cpu_model;
 	my $temp_cpu_speed;
+	my $temp_cpu_socket_count;
+	my $temp_cpu_count;
+	my $temp_physical_memory;
+	my @temp_physical_memory_sizes;
 
 	# dmidecode will fail if not run as root
 	if ($> != 0)
@@ -810,11 +839,11 @@ sub _getdmidata
 			{
 				my $status = $1;
 
-				$cpu_socket_count++;
+				$temp_cpu_socket_count++;
 
 				if ($status =~ /Populated/)
 				{
-					$cpu_count++;
+					$temp_cpu_count++;
 
 					$cpu_manufacturer =
 						$temp_cpu_manufacturer;
@@ -837,13 +866,22 @@ sub _getdmidata
 					die if ($units ne 'MB');
 					# We keep both a running total of memory size and an
 					# array of the sizes of the individual sticks.
-					$physical_memory += $megs;
-					push(@physical_memory_sizes, $megs);
+					$temp_physical_memory += $megs;
+					push(@temp_physical_memory_sizes, $megs);
 				}
 			}
 		}
 	}
 	close $dmifh;
+
+	# For each of these counter/collector-type variables we use a temporary
+	# variable to collect the data and then update the real variable in
+	# an atomic operation, so that there isn't a period where the real
+	# variable has only partial data.
+	$cpu_socket_count = $temp_cpu_socket_count;
+	$cpu_count = $temp_cpu_count;
+	$physical_memory = $temp_physical_memory;
+	@physical_memory_sizes = @temp_physical_memory_sizes;
 }
 
 # Gather a variety of info from smbios, which is available on Solaris x86
@@ -853,6 +891,10 @@ sub _getsmbiosdata
 	my $temp_cpu_manufacturer;
 	my $temp_cpu_model;
 	my $temp_cpu_speed;
+	my $temp_cpu_socket_count;
+	my $temp_cpu_count;
+	my $temp_physical_memory;
+	my @temp_physical_memory_sizes;
 
 	my $look_for_section_name;
 	my $smbios_section;
@@ -912,11 +954,11 @@ sub _getsmbiosdata
 			{
 				my $status = $1;
 
-				$cpu_socket_count++;
+				$temp_cpu_socket_count++;
 
 				if ($status =~ /Populated/)
 				{
-					$cpu_count++;
+					$temp_cpu_count++;
 
 					$cpu_manufacturer =
 						$temp_cpu_manufacturer;
@@ -940,13 +982,22 @@ sub _getsmbiosdata
 					my $megs = int($bytes / 1024 / 1024);
 					# We keep both a running total of memory size and an
 					# array of the sizes of the individual sticks.
-					$physical_memory += $megs;
-					push(@physical_memory_sizes, $megs);
+					$temp_physical_memory += $megs;
+					push(@temp_physical_memory_sizes, $megs);
 				}
 			}
 		}
 	}
 	close $smbiosfh;
+
+	# For each of these counter/collector-type variables we use a temporary
+	# variable to collect the data and then update the real variable in
+	# an atomic operation, so that there isn't a period where the real
+	# variable has only partial data.
+	$cpu_socket_count = $temp_cpu_socket_count;
+	$cpu_count = $temp_cpu_count;
+	$physical_memory = $temp_physical_memory;
+	@physical_memory_sizes = @temp_physical_memory_sizes;
 }
 
 # The following info is gathered for each network interface
