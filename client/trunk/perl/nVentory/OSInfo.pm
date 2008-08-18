@@ -8,6 +8,7 @@ use strict;
 use warnings;
 use Sys::Hostname;  # hostname
 use File::stat;     # Improved stat
+use File::Find;     # find
 
 my $debug;
 
@@ -19,6 +20,8 @@ my $kernelversion;
 my $osmemory;
 my $swapmemory;
 my $os_cpu_count;
+my $timezone;
+my $virtual_client_ids;
 
 sub gethostname
 {
@@ -104,10 +107,39 @@ sub getos
 					# Hat products easier.
 					$os = "Red Hat $1 Linux";
 					$osversion = $2;
+					
+					# In CentOS 5.1 it appears that the CentOS folks
+					# forgot to update /etc/redhat-release, and the
+					# file looks the same as CentOS 5.0.  However, they
+					# did update the centos-release RPM, so check the
+					# version number of that package to distinguish
+					# between the two.
+					if ($osversion eq '5')
+					{
+						warn "Running 'rpm -q centos-release'" if ($debug);
+						if (`rpm -q centos-release` =~ /centos-release-5-1/)
+						{
+							$osversion = '5.1';
+						}
+					}
 				}
 				else
 				{
 					die "Failed to parse contents of /etc/redhat-release\n";
+				}
+
+				# VMware ESX rides on top of a copy of Red Hat.  We want
+				# the string we return for the OS to represent that it is
+				# fundamentally a Red Hat box with some customization.
+				if (-f '/etc/vmware-release')
+				{
+					warn "Reading '/etc/vmware-release'" if ($debug);
+					open(my $VR, '<', '/etc/vmware-release') or
+						die "open /etc/vmware-release: $!\n";
+					my $vr = <$VR>;  # Read the first line
+					close($VR);
+					chomp $vr;
+					$os = "$os ($vr)";
 				}
 			}
 			elsif (-f '/etc/SuSE-release')
@@ -485,6 +517,125 @@ sub get_os_cpu_count
 
 	warn "get_os_cpu_count returning '$os_cpu_count'" if ($debug);
 	return $os_cpu_count;
+}
+
+sub get_timezone
+{
+	if (!$timezone)
+	{
+		my $os = getos();
+
+		if ($os eq 'SunOS')
+		{
+			open my $tzfh, '<', '/etc/TIMEZONE' or die "open: $!";
+			while (<$tzfh>)
+			{
+				if (/^\s*TZ=['"]?(.*)['"]?/)
+				{
+					$timezone = $1;
+				}
+			}
+			close $tzfh;
+		}
+		elsif (-l '/etc/localtime')
+		{
+			my $dest = readlink '/etc/localtime';
+			if ($dest =~ m,zoneinfo/(.*),)
+			{
+				$timezone = $1;
+			}
+		}
+		elsif (-f '/etc/localtime')
+		{
+			# Blech, /etc/localtime is a copy of the zoneinfo file.  Some
+			# Linux distros do this by default.  Best I can tell the name
+			# of the zone is not embedded in the file, so we have to poke
+			# through the zoneinfo files to try to find one that matches
+			# /etc/localtime.
+			if (-d '/usr/share/zoneinfo')
+			{
+				my $st = stat('/etc/localtime') or die "stat: $!";
+				our $ltsize = $st->size;
+				open my $ltfh, '<', '/etc/localtime' or die "open: $!";
+				our $ltcontents = do { local $/; <$ltfh> };
+				close $ltfh;
+				
+				find(\&zonematch, '/usr/share/zoneinfo');
+
+				sub zonematch
+				{
+					# Bail if we've already found a match
+					return if ($timezone);
+					
+					if (-f $_)
+					{
+						my $st = stat($_) or die "stat: $!";
+						# Check the file size first to cut down on the
+						# amount of disk reads
+						if ($st->size == $ltsize)
+						{
+							open my $zfh, '<', $_ or die "open: $!";
+							my $zcontents = do { local $/; <$zfh> };
+							close $zfh;
+							if ($zcontents eq $ltcontents)
+							{
+								my $tempzone = $File::Find::name;
+								$tempzone =~ s,.*zoneinfo/,,;
+								$tempzone =~ s,posix/,,;
+								$timezone = $tempzone;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	warn "get_timezone returning '$timezone'" if ($debug);
+	return $timezone;
+}
+
+sub get_virtual_client_ids
+{
+	if (!$virtual_client_ids)
+	{
+		my @virtual_client_ids;
+		
+		if (-x '/usr/sbin/esxcfg-info')
+		{
+			warn "Running '/usr/sbin/esxcfg-info'" if ($debug);
+			open my $esxcfgfh, '-|', '/usr/sbin/esxcfg-info'
+				or die "open /usr/sbin/esxcfg-info: $!";
+			while (<$esxcfgfh>)
+			{
+				# It would be nice to limit this to VMs that are actually
+				# running, as ones that are shut down have a higher
+				# probability of having been moved to another server or
+				# abandoned.
+				chomp;
+				if (/^\s+\|----UUID\.+([\da-fA-F \-]+)$/)
+				{
+					my $uuid = $1;
+					# Process the UUID to be in the format reported via
+					# smbios on virtual clients
+					# As reported by esxcfg-info:
+					# 56 4d b9 41 e3 59 2c d7-f5 db cc c0 85 73 b2 4b
+					# As reported via smbios:
+					# 564DB941-E359-2CD7-F5DB-CCC08573B24B
+					$uuid = uc $uuid;
+					my @uuid_parts = split(' ', $uuid);
+					$uuid = sprintf('%s%s%s%s-%s%s-%s%s%s-%s%s%s%s%s%s', @uuid_parts);
+					push @virtual_client_ids, $uuid;
+				}
+			}
+			close $esxcfgfh;
+		}
+
+		$virtual_client_ids = join(' ', @virtual_client_ids);
+	}
+
+	warn "get_virtual_client_ids returning '$virtual_client_ids'" if ($debug);
+	return $virtual_client_ids;
 }
 
 # This does a numerical comparison of numbers with multiple decimal
