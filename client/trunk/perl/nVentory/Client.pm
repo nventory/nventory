@@ -433,8 +433,32 @@ sub register
 	$data{processor_socket_count} = nVentory::HardwareInfo::get_cpu_socket_count();
 
 	$data{physical_memory} = nVentory::HardwareInfo::get_physical_memory();
-	$data{physical_memory_sizes} =
-		join ',', nVentory::HardwareInfo::get_physical_memory_sizes();
+	# The library returns an array of the sizes of each of the DIMMs in the
+	# system.  We want to condense that into an easier to read format for
+	# storage in the database.  So "1024,1024,1024,1024" becomes "4@1024"
+	# and "512,512,1024,1024" becomes "2@512,2@1024"
+	my %physical_memory_sizes;
+	foreach my $size (nVentory::HardwareInfo::get_physical_memory_sizes())
+	{
+		$physical_memory_sizes{$size}++;
+	}
+	my @physical_memory_sizes;
+	sub numerically_if_possible
+	{
+		if ($a =~ /^\d+$/ && $b =~ /^\d+$/)
+		{
+			$a <=> $b;
+		}
+		else
+		{
+			$a cmp $b;
+		}
+	}
+	foreach my $size (sort numerically_if_possible keys %physical_memory_sizes)
+	{
+		push @physical_memory_sizes, $physical_memory_sizes{$size} . '@' . $size;
+	}
+	$data{physical_memory_sizes} = join ',', @physical_memory_sizes;
 
 	# FIXME
 	#$data{power_supply_count} = nVentory::HardwareInfo::get_power_supply_count();

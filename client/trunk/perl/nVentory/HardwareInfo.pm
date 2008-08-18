@@ -24,6 +24,7 @@ my $cpu_socket_count;
 my $physical_memory;
 my @physical_memory_sizes;
 my $uniqueid;
+my $power_supply_count;
 my $first_nic_hwaddr;
 my %nicdata;
 
@@ -635,6 +636,7 @@ sub get_physical_memory_sizes
 	if (! scalar @physical_memory_sizes)
 	{
 		my $os = nVentory::OSInfo::getos();
+		my @temp_physical_memory_sizes;
 
 		if ($os =~ /Linux/ || $os eq 'FreeBSD')
 		{
@@ -661,7 +663,7 @@ sub get_physical_memory_sizes
 			{
 				if (/(\d+)MB/ && !/total/)
 				{
-					push(@physical_memory_sizes, $1);
+					push(@temp_physical_memory_sizes, $1);
 				}
 			}
 			close $memconffh;
@@ -674,12 +676,12 @@ sub get_physical_memory_sizes
 			{
 				if (/Size: (.+)/)
 				{
-					push(@physical_memory_sizes, $1);
+					push(@temp_physical_memory_sizes, $1);
 				}
 			}
 			close(SP);
 
-			if (!@physical_memory_sizes)
+			if (!@temp_physical_memory_sizes)
 			{
 				die "Failed to parse memory sizes from system_profiler\n";
 			}
@@ -687,6 +689,11 @@ sub get_physical_memory_sizes
 		else
 		{
 			die; # FIXME
+		}
+		
+		if (@temp_physical_memory_sizes)
+		{
+			@physical_memory_sizes = @temp_physical_memory_sizes;
 		}
 	}
 
@@ -743,6 +750,72 @@ sub get_uniqueid
 
 	warn "get_uniqueid returning '$uniqueid'" if ($debug);
 	return $uniqueid;
+}
+
+sub get_power_supply_count
+{
+	if (!$power_supply_count)
+	{
+		my $os = nVentory::OSInfo::getos();
+
+		my $temp_power_supply_count;
+
+		# Check for HP's hpasm
+		if (-x '/sbin/hpasmcli')
+		{
+			warn "Running \"/sbin/hpasmcli -s 'show powersupply'\"" if ($debug);
+			open(HPASM, '-|', "/sbin/hpasmcli -s 'show powersupply'") or die "open: $!";
+			while(<HPASM>)
+			{
+				if (/Present\s*:\s*Yes/)
+				{
+					$temp_power_supply_count++;
+				}
+			}
+			close(HPASM);			
+		}
+		# Check for Dell's OMSA
+		elsif (-x '/opt/dell/srvadmin/oma/bin/omreport')
+		{
+			warn "Running '/opt/dell/srvadmin/oma/bin/omreport chassis pwrsupplies'" if ($debug);
+			open(OM, '-|', '/opt/dell/srvadmin/oma/bin/omreport chassis pwrsupplies') or die "open: $!";
+			while(<OM>)
+			{
+				if (/^Index/)
+				{
+					$temp_power_supply_count++;
+				}
+			}
+			close(OM);
+		}
+		elsif ($os eq 'SunOS')
+		{
+			warn "Running 'prtdiag -v'" if ($debug);
+			open my $prtdiagfh, '-|', 'prtdiag -v'
+				or die "open prtdiag: $!";
+			my %sun_power_supplies;
+			while (<$prtdiagfh>)
+			{
+				# prtdiag reports things very differently depending on the
+				# hardware model.  So look for and count unique power
+				# supply names, this seems to be reliable across models.
+				if (/^(PS\d+)\s/)
+				{
+					$sun_power_supplies{$1} = 1;
+				}
+			}
+			close $prtdiagfh;
+			$temp_power_supply_count = scalar keys %sun_power_supplies;
+		}
+		
+		if ($temp_power_supply_count)
+		{
+			$power_supply_count = $temp_power_supply_count;
+		}
+	}
+
+	warn "get_power_supply_count returning '$power_supply_count'" if ($debug);
+	return $power_supply_count;
 }
 
 # Gather a variety of info from dmidecode, which is generally available
@@ -868,6 +941,17 @@ sub _getdmidata
 					# array of the sizes of the individual sticks.
 					$temp_physical_memory += $megs;
 					push(@temp_physical_memory_sizes, $megs);
+				}
+			}
+			elsif (/^\s+Form Factor: (.+\b)/)
+			{
+				my $form_factor = $1;
+				
+				if ($form_factor ne 'DIMM')
+				{
+					# Whoops, this isn't a DIMM.  I've seen small
+					# flash modules reported in dmidecode.
+					pop @temp_physical_memory_sizes;
 				}
 			}
 		}
