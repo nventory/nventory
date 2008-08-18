@@ -245,6 +245,21 @@ foreach my $interface (keys %Interfaces) {
         else                   { $duplex = "ERR"; }
     }
 
+    # --- bnx card ---
+    elsif ($dev eq "bnx") {
+        ### Fetch status
+        chomp($link   = `ndd /dev/$dev$ins link_status 2> /dev/null`);
+        chomp($duplex = `ndd /dev/$dev$ins link_duplex 2> /dev/null`);
+        chomp($speed  = `ndd /dev/$dev$ins link_speed 2> /dev/null`);
+        chomp($auto   = `ndd /dev/$dev$ins adv_autoneg_cap 2> /dev/null`);
+
+        ### Process status
+        unless ($speed =~ /^(10|100|1000)$/) { $speed = "ERR"; }
+        if ($duplex eq "2")    { $duplex = 1;     }
+        elsif ($duplex eq "1") { $duplex = 0;     }
+        else                   { $duplex = "ERR"; }
+    }
+
     # --- all other cards ---
     else {
         ### Set instance
