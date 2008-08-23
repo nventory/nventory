@@ -20,6 +20,7 @@ rpm: nventory-client.spec
 	# modules it throws off RPM's automatic dependency checking
 	find perl ruby | grep -v '\.svn' | grep -v 3rdparty | cpio -pdum $(BUILDROOT)/usr/nventory
 	chmod 555 $(BUILDROOT)/usr/nventory/perl/nv
+	chmod 555 $(BUILDROOT)/usr/nventory/ruby/nv
 	mkdir -p $(BUILDROOT)/usr/bin
 	# Make the perl client the default client for now
 	ln -s /usr/nventory/perl/nv $(BUILDROOT)/usr/bin/nv
@@ -48,6 +49,7 @@ debian: control
 	mkdir -p debtmp/usr/nventory
 	find perl ruby | grep -v '\.svn' | cpio -pdum debtmp
 	chmod 555 debtmp/usr/nventory/perl/nv
+	chmod 555 debtmp/usr/nventory/ruby/nv
 	mkdir -p debtmp/usr/bin
 	# Make the perl client the default client for now
 	ln -s /usr/nventory/perl/nv debtmp/usr/bin/nv
@@ -66,6 +68,11 @@ solaris: pkginfo depend
 	cat $(BUILDROOT)/usr/nventory/perl/nv.tmp | sed 's,/usr/bin/perl,/opt/csw/bin/perl,' > $(BUILDROOT)/usr/nventory/perl/nv
 	rm $(BUILDROOT)/usr/nventory/perl/nv.tmp
 	chmod 555 $(BUILDROOT)/usr/nventory/perl/nv
+	mv $(BUILDROOT)/usr/nventory/ruby/nv $(BUILDROOT)/usr/nventory/ruby/nv.tmp
+	# FIXME: Need to express dependency on CSW ruby package
+	cat $(BUILDROOT)/usr/nventory/ruby/nv.tmp | sed 's,/usr/bin/ruby,/opt/csw/bin/ruby,' > $(BUILDROOT)/usr/nventory/ruby/nv
+	rm $(BUILDROOT)/usr/nventory/ruby/nv.tmp
+	chmod 555 $(BUILDROOT)/usr/nventory/ruby/nv
 	mkdir -p $(BUILDROOT)/usr/bin
 	# Make the perl client the default client for now
 	ln -s /usr/nventory/perl/nv $(BUILDROOT)/usr/bin/nv
