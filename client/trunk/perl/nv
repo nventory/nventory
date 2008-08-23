@@ -199,18 +199,18 @@ if (@name)
 }
 
 my %SEARCH_SHORTCUTS = (
-	'hw' => 'hardware_profile.name',
-	'hwmanuf' => 'hardware_profile.manufacturer',
-	'hwmodel' => 'hardware_profile.model',
-	'mac' => 'network_interfaces.hardware_address',
-	'os' => 'operating_system.name',
-	'osvendor' => 'operating_system.vendor',
-	'osvariant' => 'operating_system.variant',
-	'osver' => 'operating_system.version_number',
-	'osversion' => 'operating_system.version_number',
-	'osarch' => 'operating_system.architecture',
+	'hw' => 'hardware_profile[name]',
+	'hwmanuf' => 'hardware_profile[manufacturer]',
+	'hwmodel' => 'hardware_profile[model]',
+	'mac' => 'network_interfaces[hardware_address]',
+	'os' => 'operating_system[name]',
+	'osvendor' => 'operating_system[vendor]',
+	'osvariant' => 'operating_system[variant]',
+	'osver' => 'operating_system[version_number]',
+	'osversion' => 'operating_system[version_number]',
+	'osarch' => 'operating_system[architecture]',
 	'serial' => 'serial_number',
-	'status' => 'status.name',
+	'status' => 'status[name]',
 );
 
 # Convert any shortcut names to their full names
@@ -285,36 +285,24 @@ if ($nodegroup)
 {
 	my %results = nVentory::Client::get_objects('node_groups', {}, {'name' => [$nodegroup]});
 	print "Child groups:\n";
-	if (ref $results{$nodegroup}->{node_groups} eq 'ARRAY')
+	if ($results{$nodegroup}->{child_groups})
 	{
-		foreach my $child_group (@{$results{$nodegroup}->{node_groups}})
+		foreach my $child_group (@{$results{$nodegroup}->{child_groups}})
 		{
 			print '  ', $child_group->{name}, "\n";
 		}
-	}
-	elsif (exists $results{$nodegroup}->{node_groups}->{node_group})
-	{
-		# If the node group only has one child group in it we'll just have
-		# a ref to that one child here instead of an array ref
-		print '  ', $results{$nodegroup}->{node_groups}->{node_group}->{name}, "\n";
 	}
 	else
 	{
 		print "\n";
 	}
 	print "Nodes:\n";
-	if (ref $results{$nodegroup}->{nodes} eq 'ARRAY')
+	if ($results{$nodegroup}->{nodes})
 	{
 		foreach my $node (@{$results{$nodegroup}->{nodes}})
 		{
 			print '  ', $node->{name}, "\n";
 		}
-	}
-	elsif (exists $results{$nodegroup}->{nodes}->{node})
-	{
-		# If the node group only has one node in it we'll just have
-		# a ref to that one node here instead of an array ref
-		print '  ', $results{$nodegroup}->{nodes}->{node}->{name}, "\n";
 	}
 	else
 	{
@@ -326,7 +314,7 @@ if (@createnodegroup)
 {
 	foreach my $newgroup (@createnodegroup)
 	{
-		nVentory::Client::create_nodegroup($newgroup, $username, \&get_password);
+		nVentory::Client::set_objects('node_groups', undef, {'name' => $newgroup}, $username, \&get_password);
 	}
 	exit;
 }
@@ -393,7 +381,20 @@ if (!%set && !@addtonodegroup && !@removefromnodegroup)
 			{
 				my ($fieldsref, $value) = @_;
 				my @fieldnames = @$fieldsref;
-				my $fieldname = join('.', @fieldnames);
+				# fields=['name'] => 'name'
+				# fields=['status', 'name'] => 'status[name]'
+				my $fieldname = '';
+				if (scalar @fieldnames > 0)
+				{
+					$fieldname .= $fieldnames[0];
+					if (scalar @fieldnames > 1)
+					{
+						foreach my $f (@fieldnames[1..$#fieldnames])
+						{
+							$fieldname .= "[$f]";
+						}
+					}
+				}
 
 				if (ref $value eq 'HASH')
 				{
@@ -423,17 +424,17 @@ if (!%set && !@addtonodegroup && !@removefromnodegroup)
 						}
 						elsif (ref $entry eq 'HASH' && ($entry->{id}))
 						{
-							fieldprint([@fieldnames, $entry->{id}], $entry);							
+							fieldprint([@fieldnames, $entry->{id}], $entry);
 						}
 						else
 						{
-							fieldprint([@fieldnames], $entry);							
+							fieldprint([@fieldnames], $entry);
 						}
 					}
 				}
 				elsif (
-					(@allfields && (!$allfields[0] || !grep($fieldname =~ /$_/, @allfields))) || 
-					 (@fields && grep($fieldname =~ /$_/, @fields)))
+					(@allfields && (!$allfields[0] || !grep(index($fieldname, $_) != -1, @allfields))) || 
+					 (@fields && grep(index($fieldname, $_) != -1, @fields)))
 				{
 					print "$fieldname: $value\n";
 				}
@@ -492,8 +493,7 @@ if (%set)
 		}
 	}
 
-	# FIXME: make generic
-	nVentory::Client::set_nodes(\%results, \%set, $username, \&get_password);
+	nVentory::Client::set_objects($objecttype, \%results, \%set, $username, \&get_password);
 }
 
 if (@addtonodegroup)
@@ -511,10 +511,10 @@ if (@addtonodegroup)
 if (@removefromnodegroup)
 {
 	my %nodegroup_results = nVentory::Client::get_objects('node_groups', {}, {'name' => [@removefromnodegroup]});
-	if (scalar keys %nodegroup_results != scalar @addtonodegroup)
+	if (scalar keys %nodegroup_results != scalar @removefromnodegroup)
 	{
 		warn "Not all requested node groups for 'removefromnodegroup' were found:\n";
-		warn "Requested:  ", join(', ', sort @addtonodegroup), "\n";
+		warn "Requested:  ", join(', ', sort @removefromnodegroup), "\n";
 		warn "Found:  ", join(', ', sort keys %nodegroup_results), "\n";
 		exit 1;
 	}

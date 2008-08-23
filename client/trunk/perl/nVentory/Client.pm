@@ -154,28 +154,24 @@ sub _xml_to_perl
 	if ($xmlnode->getAttribute('type') &&
 		$xmlnode->getAttribute('type') eq 'array')
 	{
-		my @array;
+		my @array = ();
 		foreach my $child ($xmlnode->findnodes('*'))
 		{
 			push @array, _xml_to_perl($child);
 		}
 		return \@array;
 	}
+	elsif ($xmlnode->childNodes->size <= 1)
+	{
+		return $xmlnode->string_value;
+	}
 	else
 	{
-		my %hash;
+		my %hash = ();
 		foreach my $child ($xmlnode->findnodes('*'))
 		{
 			my $field = $child->nodeName;
-
-			if ($child->childNodes->size <= 1)
-			{
-				$hash{$field} = $child->string_value;
-			}
-			else
-			{
-				$hash{$field} = _xml_to_perl($child);
-			}
+			$hash{$field} = _xml_to_perl($child);
 		}
 		return \%hash;
 	}
@@ -303,13 +299,37 @@ sub get_expanded_nodegroup
 	return @nodes;
 }
 
-# The first argument can be a reference to a hash returned by a 'nodes'
-# call to get_objects, in which case the data will be PUT to each node
+# FIXME: Would be really nice to figure out a way to use the Rails inflector
+sub singularize
+{
+	my ($word) = @_;
+	my $singular;
+	# statuses -> status
+	# ip_addresses -> ip_address
+	if ($word =~ /(.*s)es$/)
+	{
+		$singular = $1;
+	}
+	# nodes -> node
+	# vips -> vip
+	elsif ($word =~ /(.*)s$/)
+	{
+		$singular = $1;
+	}
+	else
+	{
+		$singular = $word;
+	}
+	return $singular;
+}
+
+# The results argument can be a reference to a hash returned by a
+# call to get_objects, in which case the data will be PUT to each object
 # there, thus updating them.  Or it can be 'undef', in which case the
 # data will be POSTed to create a new entry.
-sub set_nodes
+sub set_objects
 {
-	my ($resultsref, $dataref, $login, $password_callback) = @_;
+	my ($objecttypes, $resultsref, $dataref, $login, $password_callback) = @_;
 	my %results;
 	if ($resultsref)
 	{
@@ -322,24 +342,25 @@ sub set_nodes
 	my %data = %$dataref;
 	
 	# Convert any keys which don't already specify a model
-	# from 'foo' to 'node[foo]'
-	my %nodedata;
+	# from 'foo' to 'objecttype[foo]'
+	my %cleandata;
+    my $objecttype = singularize($objecttypes);
 	while (my ($key, $value) = each %data)
 	{
 		if ($key !~ /\[.+\]/)
 		{
-			$nodedata{"node[$key]"} = $value;
+			$cleandata{$objecttype."[$key]"} = $value;
 		}
 		else
 		{
-			$nodedata{$key} = $value;			
+			$cleandata{$key} = $value;
 		}
 	}
 
 	if ($debug)
 	{
 		use Data::Dumper;
-		print Dumper(\%nodedata);		
+		print Dumper(\%cleandata);		
 	}
 
 	if (%results)
@@ -350,22 +371,22 @@ sub set_nodes
 		{
 			my $id = $results{$result}->{id};
 
-			# PUT to update an existing node
+			# PUT to update an existing object
 			if ($id)
 			{
 				# HTTP::Request::Common doesn't support taking form data
 				# and encoding it into the content field for PUT requests,
 				# only POST.  So fake it out by asking it for a POST request
 				# and then converting that to PUT.
-				my $request = POST("$SERVER/nodes/$id.xml", \%nodedata);
+				my $request = POST("$SERVER/$objecttypes/$id.xml", \%cleandata);
 				$request->method('PUT');
 				my $ua = _get_ua($login, $password_callback);
-				warn "POST to URL: $SERVER/nodes/$id.xml\n" if ($debug);
+				warn "POST to URL: $SERVER/$objecttypes/$id.xml\n" if ($debug);
 				$response = $ua->request($request);
 			}
 			else
 			{
-				warn "set_nodes passed a bogus \%results hash, $result has no id field\n";
+				warn "set_objects passed a bogus \%results hash, $result has no id field\n";
 			}
 
 			# FIXME: Aborting partway through a multi-node action is probably
@@ -384,8 +405,8 @@ sub set_nodes
 
 		# POST to create a new node
 		my $ua = _get_ua($login, $password_callback);
-		warn "POST to URL: $SERVER/nodes.xml\n" if ($debug);
-		$response = $ua->request(POST "$SERVER/nodes.xml", \%nodedata);
+		warn "POST to URL: $SERVER/$objecttypes.xml\n" if ($debug);
+		$response = $ua->request(POST "$SERVER/$objecttypes.xml", \%cleandata);
 
 		if ($response->code != RC_CREATED)
 		{
@@ -431,6 +452,7 @@ sub register
 	$data{processor_count} = nVentory::HardwareInfo::get_cpu_count();
 	$data{processor_core_count} = nVentory::HardwareInfo::get_cpu_core_count();
 	$data{processor_socket_count} = nVentory::HardwareInfo::get_cpu_socket_count();
+	$data{power_supply_count} = nVentory::HardwareInfo::get_power_supply_count();
 
 	$data{physical_memory} = nVentory::HardwareInfo::get_physical_memory();
 	# The library returns an array of the sizes of each of the DIMMs in the
@@ -456,12 +478,9 @@ sub register
 	}
 	foreach my $size (sort numerically_if_possible keys %physical_memory_sizes)
 	{
-		push @physical_memory_sizes, $physical_memory_sizes{$size} . '@' . $size;
+		push @physical_memory_sizes, $physical_memory_sizes{$size} . 'x' . $size;
 	}
 	$data{physical_memory_sizes} = join ',', @physical_memory_sizes;
-
-	# FIXME
-	#$data{power_supply_count} = nVentory::HardwareInfo::get_power_supply_count();
 
 	my %nicdata = nVentory::HardwareInfo::getnicdata();
 	my $niccounter = 0;
@@ -517,8 +536,6 @@ sub register
 	# Report data to server
 	#
 
-	my $name;
-
 	# Check to see if there's an existing entry for this host that matches
 	# our unique id.  If so we want to update it, even if the hostname
 	# doesn't match our current hostname (as it probably indicates this
@@ -532,7 +549,7 @@ sub register
 	# If we failed to find an existing entry based on the unique id
 	# fall back to the hostname.  This may still fail to find an entry,
 	# if this is a new host, but that's OK as it will leave %results
-	# as undef, which triggers set_nodes to create a new entry on the
+	# as undef, which triggers set_objects to create a new entry on the
 	# server.
 	if (!%results)
 	{
@@ -541,30 +558,7 @@ sub register
 
 	if (!$dryrun)
 	{
-		set_nodes(\%results, \%data, 'autoreg');
-	}
-}
-
-# FIXME: set_nodes should be made into a generic set_objects
-# (a la get_objects) such that it supports this and other similar
-# functionality.  We shouldn't have to create new subroutines to support
-# each new object type.
-sub create_nodegroup
-{
-	my ($nodegroup, $login, $password_callback) = @_;
-
-	my $response;
-
-	# POST to create a new nodegroup
-	my $ua = _get_ua($login, $password_callback);
-	warn "POST to URL: $SERVER/node_groups.xml\n" if ($debug);
-	$response = $ua->request(POST "$SERVER/node_groups.xml", {'node_group[name]' => $nodegroup});
-
-	if ($response->code != RC_CREATED)
-	{
-		warn "Response: ", $response->status_line, "\n";
-		warn "Response content:\n", $response->content, "\n";
-		exit 1;
+		set_objects('nodes', \%results, \%data, 'autoreg');
 	}
 }
 
@@ -583,6 +577,9 @@ sub add_nodes_to_nodegroups
 	# for each group, merge in the additional nodes that the user wants
 	# added, and pass that off to set_nodegroup_assignments to perform
 	# the update.
+	# FIXME: This should talk directly to the node_group_node_assignments
+	# controller, so that we aren't exposed to the race conditions this
+	# method currently suffers from.
 	foreach my $nodegroup (keys %nodegroups)
 	{
 		# Use a hash to merge the current and new members and
@@ -621,6 +618,9 @@ sub remove_nodes_from_nodegroups
 	# for each group, remove the nodes that the user wants
 	# removed, and pass that off to set_nodegroup_assignments to perform
 	# the update.
+	# FIXME: This should talk directly to the node_group_node_assignments
+	# controller, so that we aren't exposed to the race conditions this
+	# method currently suffers from.
 	foreach my $nodegroup (keys %nodegroups)
 	{
 		my %desired_nodes;
@@ -652,7 +652,6 @@ sub set_nodegroup_node_assignments
 {
 	my ($nodesref, $nodegroupsref, $login, $password_callback) = @_;
 	my %nodes = %$nodesref;
-	my %nodegroups = %$nodegroupsref;
 
 	my @node_ids;
 	foreach my $node (keys %nodes)
@@ -673,38 +672,7 @@ sub set_nodegroup_node_assignments
 	my %nodegroupdata;
 	$nodegroupdata{'node_group_node_assignments[nodes][]'} = \@node_ids;
 
-	foreach my $nodegroup (keys %nodegroups)
-	{
-		if ($nodegroups{$nodegroup}->{id})
-		{
-			my $nodegroup_id = $nodegroups{$nodegroup}->{id};
-
-			my $response;
-
-			# PUT to update an existing node
-			# HTTP::Request::Common doesn't support taking form data
-			# and encoding it into the content field for PUT requests,
-			# only POST.  So fake it out by asking it for a POST request
-			# and then converting that to PUT.
-			my $request = POST("$SERVER/node_groups/$nodegroup_id.xml", \%nodegroupdata);
-			$request->method('PUT');
-			my $ua = _get_ua($login, $password_callback);
-			warn "PUT to URL: $SERVER/node_groups/$nodegroup_id.xml\n" if ($debug);
-			$response = $ua->request($request);
-
-			# FIXME: Aborting partway through a multi-nodegroup action is
-			# probably not ideal behavior
-			if (!$response->is_success)
-			{
-				die $response->status_line;
-			}
-		}
-		else
-		{
-			# Of course it may not have a name field either...  :)
-			warn "set_nodegroup_node_assignments passed a bogus nodegroups hash, ", $nodegroups{$nodegroup}->{name}, " has no id field\n";
-		}
-	}
+	set_objects('node_groups', $nodegroupsref, \%nodegroupdata, $login, $password_callback);
 }
 
 # Both arguments are references to a hash returned by a 'node_groups'
@@ -720,6 +688,9 @@ sub add_nodegroups_to_nodegroups
 	# for each group, merge in the additional node groups that the user wants
 	# added, and pass that off to set_nodegroup_nodegroup_assignments to perform
 	# the update.
+	# FIXME: This should talk directly to the node_group_node_groups_assignments
+	# controller, so that we aren't exposed to the race conditions this
+	# method currently suffers from.
 	foreach my $parent_group (keys %parent_groups)
 	{
 		# Use a hash to merge the current and new members and
@@ -756,6 +727,9 @@ sub remove_nodegroups_from_nodegroups
 	# for each group, remove the node groups that the user wants
 	# removed, and pass that off to set_nodegroup_nodegroup_assignments to perform
 	# the update.
+	# FIXME: This should talk directly to the node_group_node_groups_assignments
+	# controller, so that we aren't exposed to the race conditions this
+	# method currently suffers from.
 	foreach my $parent_group (keys %parent_groups)
 	{
 		my %desired_child_groups;
@@ -785,7 +759,6 @@ sub set_nodegroup_nodegroup_assignments
 {
 	my ($child_groupsref, $parent_groupsref, $login, $password_callback) = @_;
 	my %child_groups = %$child_groupsref;
-	my %parent_groups = %$parent_groupsref;
 
 	my @child_ids;
 	foreach my $child_group (keys %child_groups)
@@ -806,38 +779,7 @@ sub set_nodegroup_nodegroup_assignments
 	my %nodegroupdata;
 	$nodegroupdata{'node_group_node_group_assignments[child_groups][]'} = \@child_ids;
 
-	foreach my $parent_group (keys %parent_groups)
-	{
-		if ($parent_groups{$parent_group}->{id})
-		{
-			my $parent_id = $parent_groups{$parent_group}->{id};
-
-			my $response;
-
-			# PUT to update an existing node
-			# HTTP::Request::Common doesn't support taking form data
-			# and encoding it into the content field for PUT requests,
-			# only POST.  So fake it out by asking it for a POST request
-			# and then converting that to PUT.
-			my $request = POST("$SERVER/node_groups/$parent_id.xml", \%nodegroupdata);
-			$request->method('PUT');
-			my $ua = _get_ua($login, $password_callback);
-			warn "PUT to URL: $SERVER/node_groups/$parent_id.xml\n" if ($debug);
-			$response = $ua->request($request);
-
-			# FIXME: Aborting partway through a multi-nodegroup action is
-			# probably not ideal behavior
-			if (!$response->is_success)
-			{
-				die $response->status_line;
-			}
-		}
-		else
-		{
-			# Of course it may not have a name field either...  :)
-			warn "set_nodegroup_nodegroup_assignments passed a bogus parent groups hash, ", $parent_groups{$parent_group}->{name}, " has no id field\n";
-		}
-	}
+	set_objects('node_groups', $parent_groupsref, \%nodegroupdata, $login, $password_callback);
 }
 
 sub setdebug
@@ -849,4 +791,3 @@ sub setdebug
 }
 
 1;
-
