@@ -11,5 +11,4 @@ then
 fi
 
 # Run a one-time registration right away
-opsdb --register
-
+nventory --register
