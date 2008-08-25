@@ -112,9 +112,9 @@ class ApplicationController < ActionController::Base
           # is sufficient.
           if (assoc.klass.respond_to?('default_search_attribute') &&
             column.name == assoc.klass.default_search_attribute)
-            xm.field_name("#{assoc.name}.#{column.name} (#{assoc.name})")
+            xm.field_name("#{assoc.name}[#{column.name}] (#{assoc.name})")
           else
-            xm.field_name("#{assoc.name}.#{column.name}")
+            xm.field_name("#{assoc.name}[#{column.name}]")
           end
         end
       end

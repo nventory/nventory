@@ -63,9 +63,17 @@ class DatacenterRackAssignmentsController < ApplicationController
         }
         format.js { 
           render(:update) { |page| 
-            page.replace_html 'datacenter_rack_assignments', :partial => 'datacenters/rack_assignments', :locals => { :datacenter => @datacenter_rack_assignment.datacenter }
-            page.hide 'create_rack_assignment'
-            page.show 'add_rack_assignment_link'
+            # We expect this AJAX creation to come from one of two places,
+            # the datacenter show page or the rack show page. Depending on
+            # which we do something slightly different.
+            if request.env["HTTP_REFERER"].include? "datacenters"
+              page.replace_html 'datacenter_rack_assignments', :partial => 'datacenters/rack_assignments', :locals => { :datacenter => @datacenter_rack_assignment.datacenter }
+              page.hide 'create_rack_assignment'
+              page.show 'add_rack_assignment_link'
+            elsif request.env["HTTP_REFERER"].include? "racks"
+              page.replace_html 'datacenter_rack_assignments', :partial => 'racks/datacenter_assignment', :locals => { :rack => @datacenter_rack_assignment.rack }
+              page.hide 'create_datacenter_assignment'
+            end
           }
         }
         format.xml  { head :created, :location => datacenter_rack_assignment_url(@datacenter_rack_assignment) }
@@ -99,6 +107,7 @@ class DatacenterRackAssignmentsController < ApplicationController
   def destroy
     @datacenter_rack_assignment = DatacenterRackAssignment.find(params[:id])
     @datacenter = @datacenter_rack_assignment.datacenter
+    @rack = @datacenter_rack_assignment.rack
     @datacenter_rack_assignment.destroy
 
     respond_to do |format|

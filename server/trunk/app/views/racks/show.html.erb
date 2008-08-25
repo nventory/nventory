@@ -41,6 +41,26 @@
 
 <div class="relationship">
 
+<div id="datacenter_rack_assignments">
+<%= render :partial => 'datacenter_assignment', :locals => { :rack => @rack} %>
+</div> <!-- end datacenter_rack_assignments -->
+
+<div id="create_datacenter_assignment">
+<%= render :partial => 'shared/create_assignment_reverse', :locals => { :from => 'datacenter', :to => 'rack'} %>
+</div>
+
+<p id="new_datacenter">
+
+</p>
+
+<p id="add_datacenter_assignment_link">
+<%= render :partial => 'shared/add_inline_link_reverse', :locals => { :from => 'datacenter', :to => 'rack'} %>
+</p>
+
+</div> <!-- end relationship -->
+
+<div class="relationship">
+
 <%= render :partial => 'shared/comments', :locals => { :object => @rack} %>
 
 </div> <!-- end relationship -->
@@ -53,5 +73,9 @@
 <%= render :partial => 'shared/version_information', :locals => { :object => @rack} %>
 
 <%= javascript_tag "Element.hide('create_node_assignment')" %>
+<%= javascript_tag "Element.hide('create_datacenter_assignment')" %>
+<% if @rack.datacenter %>
+  <%= javascript_tag "Element.hide('add_datacenter_assignment_link')" %>
+<% end %>
 
 <%= javascript_tag "_rack_id = "+@rack.id.to_s %>

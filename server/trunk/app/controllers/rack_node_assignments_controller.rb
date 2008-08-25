@@ -62,9 +62,17 @@ class RackNodeAssignmentsController < ApplicationController
         }
         format.js { 
           render(:update) { |page| 
-            page.replace_html 'rack_node_assignments', :partial => 'racks/node_assignments', :locals => { :rack => @rack_node_assignment.rack }
-            page.hide 'create_node_assignment'
-            page.show 'add_node_assignment_link'
+            # We expect this AJAX creation to come from one of two places,
+            # the rack show page or the node show page. Depending on
+            # which we do something slightly different.
+            if request.env["HTTP_REFERER"].include? "racks"
+              page.replace_html 'rack_node_assignments', :partial => 'racks/node_assignments', :locals => { :rack => @rack_node_assignment.rack }
+              page.hide 'create_node_assignment'
+              page.show 'add_node_assignment_link'
+            elsif request.env["HTTP_REFERER"].include? "nodes"
+              page.replace_html 'rack_node_assignments', :partial => 'nodes/rack_assignment', :locals => { :node => @rack_node_assignment.node }
+              page.hide 'create_rack_assignment'
+            end
           }
         }
         format.xml  { head :created, :location => rack_node_assignment_url(@rack_node_assignment) }
@@ -98,6 +106,7 @@ class RackNodeAssignmentsController < ApplicationController
   def destroy
     @rack_node_assignment = RackNodeAssignment.find(params[:id])
     @rack = @rack_node_assignment.rack
+    @node = @rack_node_assignment.node
     @rack_node_assignment.destroy
 
     respond_to do |format|
@@ -105,6 +114,18 @@ class RackNodeAssignmentsController < ApplicationController
       format.js {
         render(:update) { |page|
           page.replace_html 'rack_node_assignments', {:partial => 'racks/node_assignments', :locals => { :rack => @rack} }
+          # We expect this AJAX deletion to come from one of two places,
+          # the rack show page or the node show page. Depending on
+          # which we do something slightly different.
+          if request.env["HTTP_REFERER"].include? "racks"
+            page.replace_html 'rack_node_assignments', :partial => 'racks/node_assignments', :locals => { :rack => @rack }
+            page.hide 'create_node_assignment'
+            page.show 'add_node_assignment_link'
+          elsif request.env["HTTP_REFERER"].include? "nodes"
+            page.replace_html 'rack_node_assignments', :partial => 'nodes/rack_assignment', :locals => { :node => @node }
+            page.hide 'create_rack_assignment'
+            page.show 'add_rack_assignment_link'
+          end
         }
       }
       format.xml  { head :ok }

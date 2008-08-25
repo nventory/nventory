@@ -34,7 +34,7 @@ module ApplicationHelper
   def dashboard_pulldown_form_for_model(search_class, collection)
     model_class = collection.first.class
     return '<form action="' + search_class.to_s.tableize + '" method="get">' +
-    '&nbsp;&nbsp;&nbsp;<select style="width:20em;" id="'+model_class.to_s.underscore+'" name="'+model_class.to_s.underscore+'" onchange="if (this.value != \'\') this.form.submit();">' +
+    '&nbsp;&nbsp;&nbsp;<select style="width:20em;" id="exact_'+model_class.to_s.underscore+'" name="exact_'+model_class.to_s.underscore+'" onchange="if (this.value != \'\') this.form.submit();">' +
     '<option value="">By: ' + model_class.to_s.underscore.titleize + '</option>' +
     options_from_collection_for_select(collection, 'name', 'name') +
     '</select>' +

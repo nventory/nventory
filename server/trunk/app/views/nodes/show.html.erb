@@ -95,11 +95,31 @@
       <li><%= link_to ip.address, ip_address_url(ip) %></li>
     <%- end -%>
     </ul>
-  </ul>
   <%- end -%>
+  </ul>
 <%- else -%>
   <p>This node does not have any network interfaces defined.</p>
 <%- end -%>
+</p>
+
+</div> <!-- end relationship -->
+
+<div class="relationship">
+
+<div id="rack_node_assignments">
+<%= render :partial => 'rack_assignment', :locals => { :node => @node} %>
+</div> <!-- end rack_node_assignments -->
+
+<div id="create_rack_assignment">
+<%= render :partial => 'shared/create_assignment_reverse', :locals => { :from => 'rack', :to => 'node'} %>
+</div>
+
+<p id="new_rack">
+
+</p>
+
+<p id="add_rack_assignment_link">
+<%= render :partial => 'shared/add_inline_link_reverse', :locals => { :from => 'rack', :to => 'node'} %>
 </p>
 
 </div> <!-- end relationship -->
@@ -137,12 +157,6 @@
 
 <div class="smartrelationship">
 <h3>Smart Relationships</h3>
-
-<%- if @node.rack_node_assignment.nil? -%>
-<p>This node is not in a rack.</p>
-<%- else -%>
-<p>This node is located in rack: <%= link_to h(@node.rack_node_assignment.rack.name), rack_path(@node.rack_node_assignment.rack) %>.</p>
-<%- end -%>
 
 <%- if @node.number_of_physical_nics > 0 -%>
 <p>This node has <%= h(@node.number_of_physical_nics.to_s) %> NICS that consume bandwidth. Connected producers are:</p>
@@ -193,5 +207,9 @@
 <%= render :partial => 'shared/version_information', :locals => { :object => @node} %>
 
 <%= javascript_tag "Element.hide('create_node_group_assignment')" %>
+<%= javascript_tag "Element.hide('create_rack_assignment')" %>
+<% if @node.rack %>
+  <%= javascript_tag "Element.hide('add_rack_assignment_link')" %>
+<% end %>
 
 <%= javascript_tag "_node_id = "+@node.id.to_s %>

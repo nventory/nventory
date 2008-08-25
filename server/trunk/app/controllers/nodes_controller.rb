@@ -58,7 +58,7 @@ class NodesController < ApplicationController
     # name[]=foo&name[]=bar (expands to (nodes.name LIKE '%foo%' OR nodes.name LIKE '%bar%'))
     # exact_name[1]=foo&exact_name[2]=bar (expands to nodes.name IN ('foo','bar'))
     # status=Active (expands to statuses.name LIKE '%Active%')
-    # network_interfaces.hardware_address=FF:AA (expands to network_interfaces.hardware_address LIKE '%FF:AA%')
+    # network_interfaces[hardware_address]=FF:AA (expands to network_interfaces.hardware_address LIKE '%FF:AA%')
     # exact_name=foo&exact_status=Active (expands to nodes.name = 'foo' AND statuses.name = 'Active')
     searchquery = {}
     joins = {}
@@ -119,9 +119,18 @@ class NodesController < ApplicationController
         # join automagically), but special cases can be defined via the
         # special_joins hash above, in which case we use find's :joins.
 
-        # The user can specify a complete column name like status.name,
+        # The user can specify a complete column name like status[name],
         # or just the name of the relationship in which case we use the
         # model's default_search_attribute as the column name.
+        # Possible formats the user might use, see comments above about
+        # the various formats for specifying more than one value:
+        # status=inservice
+        # status[1]=inservice
+        # status[]=inservice
+        # status[name]=inservice
+        # status[name][1]=inservice
+        # status[name][]=inservice
+        # And each of those could be preceeded by exact_
 
         search_key = nil
         exact_search = nil
@@ -133,65 +142,94 @@ class NodesController < ApplicationController
           exact_search = false
         end
 
-        search_association = nil
-        search_column = nil
-        # Check if the key looks like 'table.column' or just
-        # 'table' and split the association/table and column names.
-        # Note that the user is not specifying the table name directly,
-        # but rather the name of the association defined via
-        # belongs_to/has_*.  We convert that to a table name below.
-        if (search_key =~ /^([^.]+)\.(.+)/)
-          search_association = $1
-          search_column = $2
-        else
-          search_association = search_key
-        end
-        
-        assoc = Node.reflect_on_association(search_association.to_sym)
+        assoc = Node.reflect_on_association(search_key.to_sym)
         if assoc.nil?
           # FIXME: Need better error handling for XML users
           flash[:error] = "Ignored invalid search key #{key}"
-          logger.info "Ignored invalid search key #{key}, #{search_association}"
+          logger.info "Ignored invalid search key #{key}"
           next
         end
 
-        if (search_column)
+        if (special_joins.include? search_key)
+          joins[special_joins[search_key]] = true
+        else
+          includes[search_key.to_sym] = true
+        end
+        table_name = search_key.tableize
+        
+        search = {}
+        # Figure out if the user specified a search column
+        # status=inservice
+        # status[]=inservice
+        if value.kind_of?(String) || value.kind_of?(Array)
+          search["#{table_name}.#{assoc.klass.default_search_attribute}"] = value
+        # status[1]=inservice
+        # status[name]=inservice
+        # status[name][1]=inservice
+        # status[name][]=inservice
+        elsif value.kind_of?(Hash)
           assoc_content_column_names = assoc.klass.content_columns.collect { |c| c.name }
-          if !assoc_content_column_names.include?(search_column)
-            # FIXME: Need better error handling for XML users
-            flash[:error] = "Ignored invalid search key #{key}"
-            logger.info "Ignored invalid search key #{key}, #{search_column}"
-            next
+          # This is a bit messy as we have to disambiguate the first two
+          # possibilities.
+          if value.values.first.kind_of?(String)
+            if !assoc_content_column_names.include?(value.keys.first)
+              # The first hash key isn't a valid column name in the
+              # association, so assume this is like the first example
+              search["#{table_name}.#{assoc.klass.default_search_attribute}"] = value.values
+            else
+              value.each_pair do |search_column,search_value|
+                if assoc_content_column_names.include?(search_column)
+                  search["#{table_name}.#{search_column}"] = search_value
+                else
+                  # FIXME: Need better error handling for XML users
+                  flash[:error] = "Ignored invalid search key #{key}"
+                  logger.info "Ignored invalid search key #{key}"
+                end
+              end
+            end
+          elsif value.values.first.kind_of?(Array)
+            value.each_pair do |search_column,search_value|
+              if assoc_content_column_names.include?(search_column)
+                search["#{table_name}.#{search_column}"] = search_value
+              else
+                # FIXME: Need better error handling for XML users
+                flash[:error] = "Ignored invalid search key #{key}"
+                logger.info "Ignored invalid search key #{key}"
+              end
+            end
+          elsif value.values.first.kind_of?(Hash)
+            value.each_pair do |search_column,search_value|
+              if assoc_content_column_names.include?(search_column)
+                search["#{table_name}.#{search_column}"] = search_value.values
+              else
+                # FIXME: Need better error handling for XML users
+                flash[:error] = "Ignored invalid search key #{key}"
+                logger.info "Ignored invalid search key #{key}"
+              end
+            end
           end
-        else
-          search_column = assoc.klass.default_search_attribute
-        end
-
-        if (special_joins.include? search_association)
-          joins[special_joins[search_association]] = true
-        else
-          includes[search_association.to_sym] = true
-        end
-        table_name = search_association.tableize
-    
-        if exact_search
-          if value.kind_of? Hash
-            searchquery["#{table_name}.#{search_column} IN (?)"] = value.values
-          elsif value.kind_of? Array
-            searchquery["#{table_name}.#{search_column} IN (?)"] = value
+        end            
+        
+        search.each_pair do |skey,svalue|
+          if svalue.empty?
+            logger.info "Search value for #{skey} is empty"
           else
-            searchquery["#{table_name}.#{search_column} = ?"] = value
+            if exact_search
+              if svalue.kind_of? Array
+                searchquery["#{skey} IN (?)"] = svalue
+              else
+                searchquery["#{skey} = ?"] = svalue
+              end
+            else
+              if svalue.kind_of? Array
+                search_values = []
+                svalue.each { |v| search_values.push('%' + v + '%')}
+                searchquery["#{skey} LIKE ?"] = search_values
+              else
+                searchquery["#{skey} LIKE ?"] = '%' + svalue + '%'
+              end
+            end
           end
-        else
-          search_values = []
-          if value.kind_of? Hash
-            value.each_value { |v| search_values.push('%' + v + '%')}
-          elsif value.kind_of? Array
-            value.each { |v| search_values.push('%' + v + '%')}
-          else
-            search_values.push('%' + value + '%')
-          end
-          searchquery["#{table_name}.#{search_column} LIKE ?"] = search_values
         end
       else
         logger.info "Search value for #{key} is empty"
