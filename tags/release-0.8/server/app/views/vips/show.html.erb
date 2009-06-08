@@ -1,0 +1,61 @@
+<%- @page_title = "VIP: " + h(@vip.name) %>
+
+<div class="record_view">
+
+<h1>VIP: <%=h @vip.name %></h1>
+
+<p><strong>IP Address:</strong> <%= @vip.ip_address %></strong><br />
+<strong>Protocol:</strong> <%= @vip.protocol %></strong><br />
+<strong>Port:</strong> <%= @vip.port %></strong><br /></p>
+
+<p><strong>Load Balancer:</strong> <%= link_to @vip.load_balancer.name, @vip.load_balancer %></strong><br />
+<strong>Datacenter:</strong> 
+<%- unless ( @vip.load_balancer.rack.nil? || @vip.load_balancer.rack.datacenter.nil? ) -%>
+  <%= link_to @vip.load_balancer.rack.datacenter.name, @vip.load_balancer.rack.datacenter %>
+<%- end -%>
+</strong></p>
+
+<p><strong>Description:</strong><br />
+<%= textilize_without_paragraph(h(@vip.description)) %></p>
+
+<p class="metadata"><strong>Created at:</strong> <%= h(@vip.created_at) %><br />
+<strong>Updated at:</strong> <%= h(@vip.updated_at) %></p>
+
+</div>
+
+<div class="relationship">
+  <div id="vip_lb_pool_assignments">
+    <%= render :partial => 'lb_pool_assignments', :locals => { :vip => @vip } %>
+  </div>
+  <div id="create_lb_pool_assignment">
+    <%= render :partial => 'shared/create_vip_lb_pool_assignment', :locals => { :from => 'vip', :to => 'lb_pool'} %>
+  </div>
+  <p id="new_lb_pool">
+
+  </p>
+  <p id="add_lb_pool_assignment_link">
+    <%= render :partial => 'shared/add_vip_lb_pool_inline_link', :locals => { :from => 'vip', :to => 'lb_pool'} %>
+  </p>
+</div>
+
+<div class="relationship">
+  <div id="node_assignments">
+    <%= render :partial => 'node_assignments', :locals => { :vip => @vip } %>
+  </div>
+</div>
+
+<div class="relationship">
+  <%= render :partial => 'shared/comments', :locals => { :object => @vip} %>
+</div> <!-- end relationship -->
+
+
+<p><%= link_to 'Edit', edit_vip_path(@vip) %> | 
+<%= link_to 'Delete', vip_path(@vip), :confirm => 'Are you sure?', :method => :delete %></p>
+
+<%= render :partial => 'shared/version_information', :locals => { :object => @vip} %>
+
+<%- if true -%>
+  <%= javascript_tag "Element.hide('create_lb_pool_assignment')" %>
+<%- end -%>
+
+<%= javascript_tag "_vip_id = "+@vip.id.to_s %>
