@@ -1,2 +1,0 @@
-module NodeGroupsHelper
-end

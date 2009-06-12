@@ -1,5 +1,0 @@
-<%- if @outlet.consumer.nil? -%>
-  n/a
-<%- else -%>
-  <%= link_to "#{outlet.consumer.node.name}:#{outlet.consumer.name}", outlet.consumer %>
-<%- end -%>
