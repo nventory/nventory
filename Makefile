@@ -11,7 +11,8 @@ dist: test
 	tar czf nventory-$(VER).tar.gz nventory-$(VER) \
 		--exclude .svn
 	rm -rf nventory-$(VER)
-	md5sum nventory-$(VER).tar.gz > nventory-$(VER).tar.gz.md5
+	openssl md5 nventory-$(VER).tar.gz > nventory-$(VER).tar.gz.md5
+	openssl sha1 nventory-$(VER).tar.gz > nventory-$(VER).tar.gz.sha1
 	gpg --detach --armor nventory-$(VER).tar.gz
 
 tag:
