@@ -1,0 +1,18 @@
+development:
+  adapter: mysql
+  database: nventory_sourceforge
+  username: nventory
+  password: ""
+  host: 127.0.0.1
+  port: 3306
+  socket: /var/lib/mysql/mysql.sock
+
+# Used for both staging and production
+production:
+  adapter: mysql
+  database: nventory_sourceforge
+  username: nventory
+  password: "passypass"
+  host: 127.0.0.1
+  port: 23306
+  socket: /var/lib/mysql/mysql.sock
