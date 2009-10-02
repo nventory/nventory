@@ -1,0 +1,13 @@
+<%- unless @tooltips ; then @tooltips = []; ttflag = true ; else; ttflag = false ;  end %>
+<p><strong><%= tooltip(IpAddress,:address) %></strong> <em>*</em> <br /> <%= f.text_field :address %></p>
+
+<p><strong><%= tooltip(IpAddress,:address_type) %></strong> <em>*</em> <br /> <%= f.text_field :address_type %></p>
+
+<p><strong><%= tooltip(IpAddress,:network_interface) %></strong> <br /> <%= %></p>
+
+<p><strong><%= tooltip(IpAddress,:netmask) %></strong> <br /> <%= f.text_field :netmask %></p>
+
+<p><strong><%= tooltip(IpAddress,:broadcast) %></strong> <br /> <%= f.text_field :broadcast %></p>
+
+
+<%= @tooltips if ttflag %>
