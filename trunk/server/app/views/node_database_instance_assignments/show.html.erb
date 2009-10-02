@@ -1,0 +1,22 @@
+<%- @tooltips = [] %>
+<%- @page_title = "Node Database Instance Assignment: " + h(@node_database_instance_assignment.node.name) + '<->' + h(@node_database_instance_assignment.database_instance.name) %>
+
+<div class="record_view">
+
+<h1>Node Database Instance Assignment</h1>
+
+<p><strong><%= tooltip(NodeDatabaseInstanceAssignment,:node) %>:</strong> <%= h(@node_database_instance_assignment.node.name) %><br />
+<strong><%= tooltip(NodeDatabaseInstanceAssignment,:database_instance) %>:</strong> <%= h(@node_database_instance_assignment.database_instance.name) %><br />
+<strong><%= tooltip(NodeDatabaseInstanceAssignment,:assigned_at) %>:</strong> <%= h(@node_database_instance_assignment.assigned_at.to_formatted_s(:long)) %></p>
+
+<p class="metadata"><strong><%= tooltip(NodeDatabaseInstanceAssignment,:created_at) %>:</strong> <%= h(@node_database_instance_assignment.created_at) %><br />
+<strong><%= tooltip(NodeDatabaseInstanceAssignment,:updated_at) %>:</strong> <%= h(@node_database_instance_assignment.updated_at) %></p>
+
+</div>
+
+<p><%= link_to 'Edit', edit_node_database_instance_assignment_path(@node_database_instance_assignment) %> | 
+<%= link_to 'Delete', node_database_instance_assignment_path(@node_database_instance_assignment), :confirm => 'Are you sure?', :method => :delete %></p>
+
+<%= render :partial => 'shared/version_information', :locals => { :object => @node_database_instance_assignment} %>
+
+<%= @tooltips %>
