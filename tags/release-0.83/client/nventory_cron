@@ -1,0 +1,8 @@
+# Run the nventory client in registration mode every three hours
+MAILTO=""
+0 */3 * * * root /usr/sbin/nventory_cron_wrapper 
+
+# Make sure the client package stays updated
+MAILTO=""
+0 0 * * * root yum -d 0 -e 0 -R 30 -y update nventory-client
+

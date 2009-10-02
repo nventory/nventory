@@ -1,0 +1,31 @@
+<%- unless @tooltips ; then @tooltips = []; ttflag = true ; else; ttflag = false ;  end %>
+<%- if datacenter.datacenter_vip_assignments.count > 0 -%>
+  <table cellspacing="0" class="styled" summary="A list of the VIPs assigned to this datacenter.">
+  <caption>VIPs</caption>
+  <thead>
+  <tr>
+      <th><%= tooltip(Vip,:name) %></th>
+      <th><%= tooltip(DatacenterVipAssignment,:priority) %></th>
+      <th><%= tooltip(DatacenterVipAssignment,:updated_at) %></th>
+      <th>&nbsp;</th>
+  </tr>
+  </thead>
+  <tbody>
+  <%- for assignment in datacenter.datacenter_vip_assignments %>
+  <tr class="<%= cycle('odd', 'even') -%>" id="<%= dom_id(assignment) %>">
+      <td><%= link_to assignment.vip.name, vip_path(assignment.vip) %></td>
+      <td><%= assignment.priority %></td>
+      <td><%= link_to h(assignment.assigned_at.to_formatted_s(:long)), datacenter_vip_assignment_path(assignment) %></td>
+      <td><%= link_to_remote 'Delete',
+                              :url => datacenter_vip_assignment_path(assignment),
+                              :confirm => 'Are you sure?',
+                              :method => :delete %></td>
+  </tr>
+  <%- end %>
+  </tbody>
+  </table>
+<%- else -%>
+  <p>No VIPs are assigned to this datacenter.</p>
+<%- end -%>
+
+<%= @tooltips if ttflag %>
