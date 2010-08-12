@@ -1,0 +1,69 @@
+<%- @tooltips = [] %>
+<%- @page_title = "Rack: " + h(@node_rack.name) %>
+
+<div class="record_view">
+
+<h1><%= tooltip(Node,:node_rack,'Rack') %>: <%=h @node_rack.name %></h1>
+
+<p><%= link_to 'Visualization', visualization_node_rack_path(@node_rack) %>
+
+<p><strong><%= tooltip(NodeRack,:location) %>:</strong><br />
+<%= textilize_without_paragraph(h(@node_rack.location)) %></p>
+
+<p><strong><%= tooltip(NodeRack,:description) %>:</strong><br />
+<%= textilize_without_paragraph(h(@node_rack.description)) %></p>
+
+<p class="metadata"><strong><%= tooltip(NodeRack,:created_at) %>:</strong> <%= h(@node_rack.created_at) %><br />
+<strong><%= tooltip(NodeRack,:updated_at) %>:</strong> <%= h(@node_rack.updated_at) %></p>
+
+</div>
+
+<div class="relationship">
+
+<div id="node_rack_node_assignments">
+<%= render :partial => 'node_assignments', :locals => { :node_rack => @node_rack} %>
+</div> <!-- end node_rack_node_assignments -->
+
+<div id="create_node_assignment">
+<%= render :partial => 'create_node_assignment' %>
+</div>
+
+<p id="new_node">
+
+</p>
+
+<p id="add_node_assignment_link">
+<%= render :partial => 'add_node_link' if allow_perm(@node_rack, ['updater']) %>
+</p>
+
+</div> <!-- end relationship -->
+
+<div class="relationship">
+
+<div id="datacenter_node_rack_assignments">
+<%= render :partial => 'datacenter_assignment', :locals => { :node_rack => @node_rack} %>
+</div> <!-- end datacenter_node_rack_assignments -->
+
+<div id="create_datacenter_assignment">
+<%= render :partial => 'create_datacenter_assignment' %>
+</div>
+
+<p id="new_datacenter">
+
+</p>
+
+<p id="add_datacenter_assignment_link">
+<%= render :partial => 'add_datacenter_link' if allow_perm(@node_rack, ['updater']) %>
+</p>
+
+</div> <!-- end relationship -->
+
+<%= javascript_tag "Element.hide('create_node_assignment')" %>
+<%= javascript_tag "Element.hide('create_datacenter_assignment')" %>
+<% if @node_rack.datacenter %>
+  <%= javascript_tag "Element.hide('add_datacenter_assignment_link')" %>
+<% end %>
+
+<%= javascript_tag "_node_rack_id = "+@node_rack.id.to_s %>
+
+<%= @tooltips %>

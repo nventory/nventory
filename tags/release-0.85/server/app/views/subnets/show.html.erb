@@ -1,0 +1,22 @@
+<%- @tooltips = [] %>
+<%- @page_title = "Subnet: " + h(@subnet.network) %>
+
+<div class="record_view">
+
+<h1><%= tooltip(NodeGroup,:subnets,'Subnet') %>: <%=h @subnet.network %></h1>
+
+<p><strong><%= tooltip(Subnet,:netmask) %>:</strong> <%= h(@subnet.netmask) %></p>
+<p><strong><%= tooltip(Subnet,:broadcast) %>:</strong> <%= h(@subnet.broadcast) %></p>
+<p><strong><%= tooltip(Subnet,:gateway) %>:</strong> <%= h(@subnet.gateway) %></p>
+
+<p><strong><%= tooltip(Node,:node_group) %>:</strong> <%= link_to h(@subnet.node_group.name), node_group_url(@subnet.node_group_id) if !@subnet.node_group_id.nil? %></p>
+
+<p><strong><%= tooltip(Subnet,:description) %>:</strong><br />
+<%= textilize_without_paragraph(h(@subnet.description)) %></p>
+
+<p class="metadata"><strong><%= tooltip(Subnet,:created_at) %>:</strong> <%= h(@subnet.created_at) %><br />
+<strong><%= tooltip(Subnet,:updated_at) %>:</strong> <%= h(@subnet.updated_at) %></p>
+
+</div>
+
+<%= @tooltips %>

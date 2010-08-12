@@ -1,0 +1,16 @@
+<%- @tooltips = [] %>
+<%- @page_title = "Database Instance: " + h(@database_instance.name) %>
+
+<div class="record_view">
+
+<h1><%= tooltip(DatabaseInstance,:name,'Database Instance') %>: <%=h @database_instance.name %></h1>
+
+<p><strong><%= tooltip(DatabaseInstance,:description) %>:</strong><br />
+<%= textilize_without_paragraph(h(@database_instance.description)) %></p>
+
+<p class="metadata"><strong><%= tooltip(DatabaseInstance,:created_at) %>:</strong> <%= h(@database_instance.created_at) %><br />
+<strong><%= tooltip(DatabaseInstance,:updated_at) %>:</strong> <%= h(@database_instance.updated_at) %></p>
+
+</div>
+
+<%= @tooltiops %>

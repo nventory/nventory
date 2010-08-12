@@ -1,0 +1,6 @@
+fastdb_to_jr:
+  from: database_instances(:fastdb)
+  to: database_instances(:fastdbjr)
+  name: fastdb_to_jr
+  created_at: <%= 5.days.ago.to_s :db %>
+  assigned_at: <%= 5.days.ago.to_s :db %>

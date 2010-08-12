@@ -1,0 +1,24 @@
+<%- unless @tooltips ; then @tooltips = []; ttflag = true ; else; ttflag = false ;  end %>
+<%- if node_group.node_group_node_assignments.count > 0 -%>
+  <table cellspacing="0" class="styled" summary="A list of the nodes assigned to this node_group.">
+  <h3><%= tooltip(NodeGroup,:virtual_nodes) %></h3>
+  <thead>
+  <tr>
+      <th><%= tooltip(Node,:name) %></th>
+      <th><%= tooltip(Node,:assigned_at) %></th>
+  </tr>
+  </thead>
+  <tbody>
+  <%- for assignment in node_group.virtual_node_group_node_assignments.sort{|a,b| a.node.name <=> b.node.name} %>
+    <%- all_child_ng_ids = assignment.node_group.all_child_groups.collect{|cng| cng.id} -%>
+    <tr class="<%= cycle('odd', 'even') -%>" id="<%= dom_id(assignment) %>">
+        <td><%= link_to assignment.node.name, node_path(assignment.node) %></td>
+        <td><%= assignment.assigned_at.to_formatted_s(:long) %></td>
+    </tr>
+  <%- end %>
+  </tbody>
+  </table>
+
+<%- end -%>
+
+<%= @tooltips if ttflag %>

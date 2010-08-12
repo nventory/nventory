@@ -1,0 +1,38 @@
+<%- @tooltips = [] %>
+<%- @page_title = "Service Profile for #{@service_profile.service.name}" %>
+
+<div class="record_view">
+
+<h1><%= tooltip(Service,:service_profile) %> for <%= @service_profile.service.name %></font></h1>
+<p><strong><%= tooltip(ServiceProfile,:service) %>: </strong><%= @service_profile.service.name %><br />
+<p><strong><%= tooltip(ServiceProfile,:contact) %>: </strong><%= mail_to @service_profile.contact%><br /></p>
+<p><strong><%= tooltip(ServiceProfile,:dev_url) %>: </strong><%= @service_profile.dev_url %><br />
+<strong><%= tooltip(ServiceProfile,:qa_url) %>: </strong><%= @service_profile.qa_url%><br />
+<strong><%= tooltip(ServiceProfile,:stg_url) %>: </strong><%= @service_profile.stg_url%><br />
+<strong><%= tooltip(ServiceProfile,:prod_url) %>: </strong><%= @service_profile.prod_url%><br />
+<strong><%= tooltip(ServiceProfile,:repo_url) %>: </strong><%= @service_profile.repo_url%><br /></p>
+<p><strong><%= tooltip(ServiceProfile,:codelang) %>: </strong><%= @service_profile.codelang%><br /></p>
+<p><strong><%= tooltip(ServiceProfile,:external) %>: </strong><%= @service_profile.external %><br />
+<strong><%= tooltip(ServiceProfile,:pciscope) %>: </strong><%= @service_profile.pciscope%><br /></p>
+
+<p class="metadata"><strong><%= tooltip(ServiceProfile,:created_at) %>:</strong> <%= h(@service_profile.created_at) %><br />
+<strong><%= tooltip(ServiceProfile,:updated_at) %>:</strong> <%= h(@service_profile.updated_at) %></p>
+
+</div>
+
+<!-- to be finished -->
+<%- if false -%>
+  <div id="service_profile_service_profile_assignments">
+    <%= render :partial => 'service_profile_assignments', :locals => {:service_profile => @service_profile} %>
+  </div>
+  
+  </div>
+  
+  <div class="relationship">
+    <div id="vip_service_profile_assignments">
+      <%= render :partial => 'vip_assignments', :locals => { :service_profile => @service_profile} %>
+    </div>
+  </div>
+<%- end -%>
+
+<%= @tooltips %>

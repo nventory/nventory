@@ -1,0 +1,33 @@
+<%- @tooltips = [] %>
+<%- @page_title = "LB Profile for: #{@lb_profile.lb_pool.name} " %>
+
+<div class="record_view">
+
+<h1><%= tooltip(LbPool,:lb_profile) %> for: <%= @lb_profile.lb_pool.name %></font></h1>
+<p><strong><%= tooltip(LbProfile,:lb_pool) %>: </strong><%= @lb_profile.lb_pool.name %><br />
+<p><strong><%= tooltip(LbProfile,:port) %>: </strong><%= @lb_profile.port%><br />
+<strong><%= tooltip(LbProfile,:protocol) %>: </strong><%= @lb_profile.protocol%><br />
+<strong><%= tooltip(LbProfile,:lbmethod,'Load Balancer Method') %>: </strong><%= @lb_profile.lbmethod%><br />
+<strong><%= tooltip(LbProfile,:healthcheck,'Health Check') %>: </strong><%= @lb_profile.healthcheck%><br /></p>
+
+<p class="metadata"><strong><%= tooltip(LbProfile,:created_at) %>:</strong> <%= h(@lb_profile.created_at) %><br />
+<strong><%= tooltip(LbProfile,:updated_at) %>:</strong> <%= h(@lb_profile.updated_at) %></p>
+
+</div>
+
+<!-- to be finished -->
+<%- if false -%>
+  <div id="lb_profile_lb_profile_assignments">
+    <%= render :partial => 'lb_profile_assignments', :locals => {:lb_profile => @lb_profile} %>
+  </div>
+  
+  </div>
+  
+  <div class="relationship">
+    <div id="vip_lb_profile_assignments">
+      <%= render :partial => 'vip_assignments', :locals => { :lb_profile => @lb_profile} %>
+    </div>
+  </div>
+<%- end -%>
+
+<%= @tooltips %>

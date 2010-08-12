@@ -1,0 +1,19 @@
+<%- @tooltips = [] %>
+<%- @page_title = "Datacenter VIP Assignment: " + h(@datacenter_vip_assignment.datacenter.name) + '<->' + h(@datacenter_vip_assignment.vip.name) %>
+
+<div class="record_view">
+
+<h1>Datacenter VIP Assignment</h1>
+
+<p><strong><%= tooltip(DatacenterVipAssignment,:datacenter) %>:</strong> <%= h(@datacenter_vip_assignment.datacenter.name) %><br />
+<strong><%= tooltip(DatacenterVipAssignment,:vip,'VIP') %>:</strong> <%= h(@datacenter_vip_assignment.vip.name) %><br />
+<strong><%= tooltip(DatacenterVipAssignment,:priority) %>:</strong> <%= h(@datacenter_vip_assignment.priority) %><br />
+
+<strong><%= tooltip(DatacenterVipAssignment,:assigned_at) %>:</strong> <%= h(@datacenter_vip_assignment.assigned_at.to_formatted_s(:long)) %></p>
+
+<p class="metadata"><strong><%= tooltip(DatacenterVipAssignment,:created_at) %>:</strong> <%= h(@datacenter_vip_assignment.created_at) %><br />
+<strong><%= tooltip(DatacenterVipAssignment,:updated_at) %>:</strong> <%= h(@datacenter_vip_assignment.updated_at) %></p>
+
+</div>
+
+<%= @tooltips %>
