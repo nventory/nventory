@@ -1,0 +1,63 @@
+<%- @tooltips = [] %>
+<%- @page_title = "Load Balance Pool: " + h(@lb_pool.name) %>
+
+<div class="record_view">
+
+<h1><%= tooltip(Node,:lb_pools,'Load Balance Pool') %>: <%=h @lb_pool.name %></h1>
+<p><strong><%= tooltip(LbPool,:name) %>:</strong><%= @lb_pool.owner %><br /></p>
+<p><strong><%= tooltip(LbProfile,:port) %>:</strong><%= @lb_pool.lb_profile.port%><br />
+<strong><%= tooltip(LbProfile,:protocol) %>:</strong><%= @lb_pool.lb_profile.protocol%><br />
+<strong><%= tooltip(LbProfile,:lbmethod) %>:</strong><%= @lb_pool.lb_profile.lbmethod%><br />
+<strong><%= tooltip(LbProfile,:healthcheck) %>:</strong><%= @lb_pool.lb_profile.healthcheck%><br /></p>
+<p><strong><%= tooltip(LbPool,:description) %>:</strong><br />
+<%= textilize_without_paragraph(h(@lb_pool.description)) %></p>
+
+<p class="metadata"><strong><%= tooltip(LbPool,:created_at) %>:</strong> <%= h(@lb_pool.created_at) %><br />
+<strong><%= tooltip(LbPool,:updated_at) %>:</strong> <%= h(@lb_pool.updated_at) %></p>
+
+</div>
+
+<!-- assign LbPool to VIP -->
+<div class="relationship">
+  <div id="vip_lb_pool_assignments">
+    <%= render :partial => 'vip_assignment', :locals => { :lb_pool => @lb_pool} %>
+  </div>
+  
+  <div id="create_vip_assignment">
+    <%= render :partial => 'create_vip_assignment' %>
+  </div>
+    
+  <p id="new_vip">
+    
+  </p>
+    
+  <p id="add_vip_assignment_link">
+    <%= render :partial => 'add_vip_assignment_link' if allow_perm(@lb_pool, ['updater']) %>
+  </p>
+</div>
+
+<!-- assign Node to LBPool -->
+<div class="relationship">
+  <div id="node_assignments">
+    <%= render :partial => 'node_assignments', :locals => { :lb_pool => @lb_pool} %>
+  </div>
+
+  <div id="create_node_assignment">
+    <!-- reminder:  lb_pool model is just an alias of node_group model -->
+    <%= render :partial => 'create_lb_pool_node_assignment', :locals => { :lb_pool_id => @lb_pool.id } %>
+  </div>
+
+  <p id="new_node">
+
+  </p>
+
+  <p id="add_node_assignment_link">
+    <%= render :partial => 'add_lb_pool_node_inline_link' if allow_perm(@lb_pool, ['updater']) %>
+  </p>
+</div>
+
+<%= javascript_tag "Element.hide('create_vip_assignment')" %>
+<%= javascript_tag "Element.hide('create_node_assignment')" %>
+<%= javascript_tag "_lb_pool_id = "+@lb_pool.id.to_s %>
+
+<%= @tooltips %>

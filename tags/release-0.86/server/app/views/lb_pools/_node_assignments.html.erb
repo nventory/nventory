@@ -1,0 +1,36 @@
+<%- unless @tooltips ; then @tooltips = []; ttflag = true ; else; ttflag = false ;  end %>
+<%- if lb_pool.nodes.count > 0 -%>
+  <table cellspacing="0" class="styled" summary="A list of all vips this lb_pool belongs to">
+  <caption><%= tooltip(nil,:nodes,'Nodes',nodes_tooltip) %></caption>
+  <thead>
+  <tr>
+      <th><%= tooltip(Node,:name) %></th>
+      <th><%= tooltip(Node,:ip_address) %></th>
+      <th><%= tooltip(Node,:status) %></th>
+      <th><%= tooltip(Node,:hardware_profile) %></th>
+      <th><%= tooltip(Node,:operating_system,'OS') %></th>
+      <th>&nbsp;</th>
+  </tr>
+  </thead>
+  <tbody>
+  <%- for assignment in lb_pool.lb_pool_node_assignments.sort{|a,b| a.node.name <=> b.node.name} %>
+  <tr class="<%= cycle('odd', 'even') -%>" id="<%= dom_id(assignment) %>">
+      <td><%= link_to assignment.node.name, assignment.node %></td>
+      <td><%= assignment.node.ips.join('; ') %></td>
+      <td><%= assignment.node.status.name %></td>
+      <td><%= assignment.node.hardware_profile.name %></td>
+      <td><%= assignment.node.operating_system.nil? ? '&nbsp;' : assignment.node.operating_system.name %></td>
+      <td><%= link_to_remote 'Delete',
+                              :url => assignment,
+                              :confirm => 'Are you sure?',
+                              :method => :delete if allow_perm(lb_pool,'updater') && allow_perm(assignment.node,'updater') %></td>
+  </tr>
+  <%- end %>
+  </tbody>
+  </table>
+
+<%- else -%>
+  <p>There aren't any <%= tooltip(nil,:nodes,'Nodes',nodes_tooltip) %> belonging to this Load Balance Pool.</p>
+<%- end -%>
+
+<%= @tooltips if ttflag %>
