@@ -1,6 +1,0 @@
-vmhost1eth0:
-  name: eth0
-  node: vmhost1
-irvnventory1_lo_nic:
-  name: lo
-  interface_type: loopback
