@@ -1,5 +1,5 @@
 Package: nventory-client
-Version: 1.62.8
+Version: 1.64.1
 Maintainer: John Tran<jtran@attinteractive.com>
 Architecture: all
 Depends: libxml-libxml-perl
