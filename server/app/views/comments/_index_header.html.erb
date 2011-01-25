@@ -1,9 +1,0 @@
-<%- unless @tooltips ; then @tooltips = []; ttflag = true ; else; ttflag = false ;  end %>
-<tr>
-  <th nowrap="nowrap" width="5%">&nbsp;</th>
-  <th <%= sort_td_class_helper "created_at" %> > <%= sort_link_helper "Created At", "created_at" %></th>
-  <th <%= sort_td_class_helper "account" %> > <%= sort_link_helper "Account", "account" %></th>
-  <th>Belongs To</th>
-</tr>
-
-<%= @tooltips if ttflag %>
