@@ -1,3 +1,0 @@
-cdrom:
-  name: cdrom
-  storage_controller: ide_interface
