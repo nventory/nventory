@@ -890,7 +890,7 @@ sub register
 		{
 			$data{virtualarch} = 'xen';
 		}
-		my %virtualhostinfo = nVentory::OSInfo::getvirtualhostinfo;
+		my %virtualhostinfo = nVentory::OSInfo::getvirtualhostinfo();
 		print "$data{virtualarch} MASTER HOST\n";
 		$data{virtualmode} = 'host';
 
@@ -929,7 +929,7 @@ sub register
 		$data{virtualarch} = 'vmware';
 		print "VMWARE MASTER HOST.  Listing all guest vm data:\n";
 		$data{virtualmode} = 'host';
-		my %vmwarehostdata = nVentory::OSInfo::getvmwarehostinfo;
+		my %vmwarehostdata = nVentory::OSInfo::getvmwarehostinfo();
 		unless (scalar(keys %vmwarehostdata) == 0)
 		{
 			foreach my $key (sort(keys %vmwarehostdata))
