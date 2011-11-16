@@ -1,4 +1,4 @@
-VER=0.86
+VER=0.87
 TAGNAME=release-$(VER)
 
 all: dist

@@ -1,0 +1,36 @@
+<%- unless @tooltips ; then @tooltips = []; ttflag = true ; else; ttflag = false ;  end %>
+<%- if vip.lb_pools.collect{|pool| pool.nodes }.size > 0 -%>
+  <table cellspacing="0" class="styled" summary="A list of all vips this lb_pool belongs to">
+  <caption><%= tooltip(nil,:nodes,'Nodes',nodes_tooltip) %> Belonging to Load Balancer Pools</caption>
+  <thead>
+  <tr>
+      <th><%= tooltip(Node,:name) %></th>
+      <th><%= tooltip(Vip,:lb_pools,'LbPool') %></th>
+      <th><%= tooltip(Node,:ip_addresses,'IPAddress') %></th>
+      <th><%= tooltip(Node,:status) %></th>
+      <th><%= tooltip(Node,:hardware_profile) %></th>
+      <th><%= tooltip(Node,:operating_system) %></th>
+      <th>&nbsp;</th>
+  </tr>
+  </thead>
+  <tbody>
+  <%- vip.lb_pools.each do |lb_pool| -%>
+    <%- lb_pool.nodes.sort{|a,b| a.name <=> b.name}.each do |node| %>
+    <tr class="<%= cycle('odd', 'even') -%>" id="<%= dom_id(node) %>">
+        <td><%= link_to node.name, node %></td>
+        <td><%= link_to lb_pool.name, lb_pool %></td>
+        <td><%= node.ips.join('; ') %></td>
+        <td><%= node.status.name %></td>
+        <td><%= node.hardware_profile.name %></td>
+        <td><%= node.operating_system.nil? ? '&nbsp;' : node.operating_system.name %></td>
+    </tr>
+    <%- end -%>
+  <%- end -%>
+  </tbody>
+  </table>
+
+<%- else -%>
+  <p>No <%= tooltip(nil,:nodes,'Nodes',nodes_tooltip) %> belong to this <%= tooltip(VipLbPoolAssignment,:vip) %>.</p>
+<%- end -%>
+
+<%= @tooltips if ttflag %>

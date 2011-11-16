@@ -1,0 +1,4 @@
+irvnventory1_lo_ip:
+  network_interface: irvnventory1_lo_nic
+  address: 127.0.0.1
+  address_type: ipv4

@@ -1,0 +1,18 @@
+<%- @tooltips = [] %>
+<%- @page_title = "Status: " + h(@status.name) %>
+
+<div class="record_view">
+
+<h1><%= tooltip(Node,:status) %>: <%=h @status.name %></h1>
+
+<p><strong><%= tooltip(Status,:description) %>:</strong><br />
+<%= textilize_without_paragraph(h(@status.description)) %></p>
+
+<p class="metadata"><strong><%= tooltip(Status,:created_at) %>:</strong> <%= h(@status.created_at) %><br />
+<strong><%= tooltip(Status,:updated_at) %>:</strong> <%= h(@status.updated_at) %></p>
+
+</div>
+
+<div class="relationship"><p> <%= link_to 'Search', "#{nodes_path}?exact_status=#{CGI.escape(@status.name)}" %> for nodes with this status </p> </div>
+
+<%= @tooltips %>

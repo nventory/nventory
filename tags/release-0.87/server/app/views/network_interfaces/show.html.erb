@@ -1,0 +1,33 @@
+<%- @tooltips = [] %>
+<%- @page_title = "Network Interface: " + h(@network_interface.name) %>
+
+<div class="record_view">
+
+<h1>Name: <%=h @network_interface.name %></h1>
+
+<p><strong><%= tooltip(NetworkInterface,:node) %>:</strong> <%= link_to h(@network_interface.node.name), node_url(@network_interface.node_id) if !@network_interface.node_id.nil? %></p>
+
+<p><strong><%= tooltip(NetworkInterface,:interface_type) %>:</strong> <%= h(@network_interface.interface_type) %></p>
+<p><strong><%= tooltip(NetworkInterface,:physical) %>:</strong> <%= h(@network_interface.physical) %></p>
+<p><strong><%= tooltip(NetworkInterface,:hardware_address) %>:</strong> <%= h(@network_interface.hardware_address) %></p>
+<p><strong><%= tooltip(NetworkInterface,:up) %>:</strong> <%= h(@network_interface.up) %></p>
+<p><strong><%= tooltip(NetworkInterface,:link) %>:</strong> <%= h(@network_interface.link) %></p>
+<p><strong><%= tooltip(NetworkInterface,:speed) %>:</strong> <%= h(@network_interface.speed) %></p>
+<p><strong><%= tooltip(NetworkInterface,:full_duplex) %>:</strong> <%= h(@network_interface.full_duplex) %></p>
+<p><strong><%= tooltip(NetworkInterface,:autonegotiate) %>:</strong> <%= h(@network_interface.autonegotiate) %></p>
+
+<p>
+<strong>IP addresses:</strong>
+<ul>
+<%- @network_interface.ip_addresses.each do |ip| -%>
+  <li><%= link_to ip.address, ip_address_url(ip) %></li>
+<%- end -%>
+</ul>
+</p>
+
+<p class="metadata"><strong><%= tooltip(NetworkInterface,:created_at) %>:</strong> <%= h(@network_interface.created_at) %><br />
+<strong><%= tooltip(NetworkInterface,:updated_at) %>:</strong> <%= h(@network_interface.updated_at) %></p>
+
+</div>
+
+<%= @tooltips %>

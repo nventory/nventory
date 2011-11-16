@@ -1,0 +1,39 @@
+<%- unless @tooltips ; then @tooltips = []; ttflag = true ; else; ttflag = false ;  end %>
+<p>
+  <strong><%= tooltip(LbPool,:name) %></strong> <em>*</em> <br />
+  <%= f.text_field :name %>
+</p>
+<p>
+  <strong><%= tooltip(LbPool,:owner) %></strong> <br />
+  <%= f.text_field :owner %>
+</p>
+
+<!-- BEGIN nested lb_profile nested assocs BEGIN -->
+
+<%- f.fields_for :lb_profile do |lp_fields| -%>
+  <p>
+    <strong><%= tooltip(LbProfile,:port) %>:</strong> <em>*</em><br />
+    <%= lp_fields.text_field :port %>
+  </p>
+  <p>
+    <strong><%= tooltip(LbProfile,:protocol) %>:</strong> <em>*</em> <br />
+    <%= lp_fields.select :protocol, $protocols %>
+  </p>
+  <p>
+    <strong><%= tooltip(LbProfile,:lbmethod) %>:</strong> <em>*</em><br />
+    <%= lp_fields.select :lbmethod, $lbmethods %>
+  </p>
+  <p>
+    <strong><%= tooltip(LbProfile,:healthcheck) %>:</strong><br />
+    <%= lp_fields.text_field :healthcheck %>
+  </p>
+<%- end -%>
+
+<!-- END nested lb_profile nested assocs END -->
+
+<p>
+  <strong><%= tooltip(LbPool,:description) %></strong> <br />
+  <%= f.text_area :description, {"cols" => 30, "rows" => 4}  %>
+</p>
+
+<%= @tooltips if ttflag %>

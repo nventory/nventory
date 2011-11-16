@@ -1,0 +1,38 @@
+<%- unless @tooltips ; then @tooltips = []; ttflag = true ; else; ttflag = false ;  end %>
+<%- if vip.vip_lb_pool_assignments.count > 0 -%>
+  <table cellspacing="0" class="styled" summary="A list of all lb_pools that belong to this vip">
+  <caption><%= tooltip(Vip,:lb_pools,'Load Balance Pools') %></caption>
+  <thead>
+  <tr>
+      <th><%= tooltip(VipLbPoolAssignment,:name) %></th>
+      <th><%= tooltip(LbProfile,:protocol) %></th>
+      <th><%= tooltip(LbProfile,:port) %></th>
+      <th><%= tooltip(LbProfile,:lbmethod) %></th>
+      <th><%= tooltip(LbProfile,:healthcheck) %></th>
+      <th><%= tooltip(VipLbPoolAssignment,:assigned_at) %></th>
+      <th>&nbsp;</th>
+  </tr>
+  </thead>
+  <tbody>
+  <%- for assignment in vip.vip_lb_pool_assignments.sort{|a,b| a.lb_pool.name <=> b.lb_pool.name} %>
+  <tr class="<%= cycle('odd', 'even') -%>" id="<%= dom_id(assignment) %>">
+      <td><%= link_to assignment.lb_pool.name, assignment.lb_pool %></td>
+      <td><%= assignment.lb_pool.lb_profile.protocol %></td>
+      <td><%= assignment.lb_pool.lb_profile.port %></td>
+      <td><%= assignment.lb_pool.lb_profile.lbmethod %></td>
+      <td><%= assignment.lb_pool.lb_profile.healthcheck %></td>
+      <td><%= link_to h(assignment.assigned_at.to_formatted_s(:long)), assignment %></td>
+      <td><%= link_to_remote 'Delete',
+                              :url => assignment,
+                              :confirm => 'Are you sure?',
+                              :method => :delete %></td>
+  </tr>
+  <%- end %>
+  </tbody>
+  </table>
+
+<%- else -%>
+  <p>No <%= tooltip(Vip,:lb_pools,'Load Balance Pool') %> assigned to this VIP.</p>
+<%- end -%>
+
+<%= @tooltips if ttflag %>

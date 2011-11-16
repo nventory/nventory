@@ -1,0 +1,25 @@
+# Read about fixtures at http://ar.rubyonrails.org/classes/Fixtures.html
+irvnventory1:
+  name: irvnventory1
+  hardware_profile: hp_dl360
+  status: inservice
+irvnventory2:
+  name: irvnventory2
+  hardware_profile: hp_dl360
+  status: inservice
+vmguest1:
+  name: vmguest1
+  hardware_profile: xenvm
+  status: inservice
+vmguest2:
+  name: vmguest2
+  hardware_profile: xenvm
+  status: inservice
+vmhost1:
+  name: vmhost1
+  hardware_profile: xenvm
+  status: inservice
+switch1:
+  name: switch1 
+  hardware_profile: cat_6509
+  status: inservice
