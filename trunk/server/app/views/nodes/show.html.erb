@@ -65,12 +65,10 @@
 </p>
 
 <p>
-<strong><%= tooltip(@node.class,:used_space,'Diskspace Used') %>:</strong> 
-<%= "#{@node.used_space.to_i / 1024} MB" unless @node.used_space.nil? %>
-<%= "(#{ @node.used_space.to_i * 100 / (@node.avail_space.to_i + @node.used_space.to_i)}%)" unless (@node.used_space.nil? || @node.avail_space.nil?) %><br />
+<strong><%= tooltip(@node.class,:used_space,'Diskspace Used') %>:</strong>
+<%= "#{@node.used_space.to_i / 1024} MB" unless @node.used_space.nil? %> <%= used_space_percentage %><br />
 <strong><%= tooltip(@node.class,:avail_space,'Diskspace Avail') %> :</strong>
-<%= "#{@node.avail_space.to_i / 1024  } MB" unless @node.avail_space.nil? %>
-<%= "(#{ @node.avail_space.to_i * 100 / (@node.avail_space.to_i + @node.used_space.to_i)}%)" unless (@node.used_space.nil? || @node.avail_space.nil?) %><br />
+<%= "#{@node.avail_space.to_i / 1024  } MB" unless @node.avail_space.nil? %> <%= avail_space_percentage %><br />
 <small><i>(Disk space info only reflects "/" and "/home")</i></small>
 </p>
 

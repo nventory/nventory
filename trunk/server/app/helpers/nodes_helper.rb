@@ -34,4 +34,16 @@ module NodesHelper
     end
   end
 
+  def used_space_percentage
+    unless (@node.used_space.nil? || @node.avail_space.nil? || @node.avail_space.to_i + @node.used_space.to_i == 0)
+      "(#{ @node.used_space.to_i * 100 / (@node.avail_space.to_i + @node.used_space.to_i)}%)" 
+    end
+  end
+
+  def avail_space_percentage
+    unless (@node.used_space.nil? || @node.avail_space.nil? || @node.avail_space.to_i + @node.used_space.to_i == 0)
+      "(#{ @node.avail_space.to_i * 100 / (@node.avail_space.to_i + @node.used_space.to_i)}%)" 
+    end
+  end
 end
+
