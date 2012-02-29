@@ -158,14 +158,28 @@ namespace nVentoryRegisterClient
             UInt32 coreCount = 0;
             foreach (ManagementObject win32Processor in processorCollection)
             {
-                coreCount += (UInt32)win32Processor["NumberOfCores"];
+                try
+                {
+                    coreCount += (UInt32)win32Processor["NumberOfCores"];
+                }
+                catch (System.Management.ManagementException me)
+                {
+                    System.Console.WriteLine("WARNING: Couldn't get NumberOfCores");
+                    coreCount += 1;
+                }
             }
             bodyParts.Add("node[processor_core_count]=" + Uri.EscapeDataString(coreCount.ToString()));
             // Haven't yet figured out a way to get the CPU socket count
             // node[processor_socket_count]
             bodyParts.Add("node[os_processor_count]=" + Uri.EscapeDataString(win32ComputerSystem["NumberOfProcessors"].ToString()));
-            bodyParts.Add("node[os_virtual_processor_count]=" + Uri.EscapeDataString(win32ComputerSystem["NumberOfLogicalProcessors"].ToString()));
-
+            try
+            {
+                bodyParts.Add("node[os_virtual_processor_count]=" + Uri.EscapeDataString(win32ComputerSystem["NumberOfLogicalProcessors"].ToString()));
+            }
+            catch (System.Management.ManagementException me)
+            {
+                System.Console.WriteLine("WARNING: Couldn't get NumberOfLogicalProcessors");
+            }
             // Memory
             UInt64 totalMemory = 0;
             ArrayList memorySizes = new ArrayList();
