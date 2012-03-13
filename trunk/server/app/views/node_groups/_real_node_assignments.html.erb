@@ -4,6 +4,7 @@
   <thead>
   <tr>
       <th><%= tooltip(NodeGroup,:name) %></th>
+      <th>Status</th>
       <th><%= tooltip(NodeGroup,:assigned_at) %></th>
       <th>&nbsp;</th>
   </tr>
@@ -12,6 +13,7 @@
   <%- for assignment in node_group.real_node_group_node_assignments.sort{|a,b| a.node.name <=> b.node.name} %>
   <tr class="<%= cycle('odd', 'even') -%>" id="<%= dom_id(assignment) %>">
       <td><%= link_to assignment.node.name, node_path(assignment.node) %></td>
+      <td><%= assignment.node.status.name %></td>
       <td><%= link_to h(assignment.assigned_at.to_formatted_s(:long)), node_group_node_assignment_path(assignment) %></td>
       <td><%= link_to_remote 'Delete',
                               :url => node_group_node_assignment_path(assignment),

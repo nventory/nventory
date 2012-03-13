@@ -5,6 +5,7 @@
   <thead>
   <tr>
       <th><%= tooltip(Node,:name) %></th>
+      <th>Status</th>
       <th><%= tooltip(Node,:assigned_at) %></th>
   </tr>
   </thead>
@@ -13,6 +14,7 @@
     <%- all_child_ng_ids = assignment.node_group.all_child_groups.collect{|cng| cng.id} -%>
     <tr class="<%= cycle('odd', 'even') -%>" id="<%= dom_id(assignment) %>">
         <td><%= link_to assignment.node.name, node_path(assignment.node) %></td>
+        <td><%= assignment.node.status.name %></td>
         <td><%= assignment.assigned_at.to_formatted_s(:long) %></td>
     </tr>
   <%- end %>
