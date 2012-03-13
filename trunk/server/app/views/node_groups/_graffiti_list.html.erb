@@ -1,6 +1,6 @@
 <%- unless @tooltips ; then @tooltips = []; ttflag = true ; else; ttflag = false ;  end %>
   <%- list = [] %>
-  <%- graffitis.each{ |graffiti| list << link_to("#{graffiti.name}: #{graffiti.value}",graffiti) } -%>
+  <%- graffitis.sort_by{|g| g.name}.each{ |graffiti| list << link_to("#{graffiti.name}: #{graffiti.value}",graffiti) } -%>
   <p><strong><%= tooltip(NodeGroup, :graffiti_list,'Graffitis') %>: </strong><br/>
     <font size=1>
     <%= list.join('<br/>') %>
