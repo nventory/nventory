@@ -1174,6 +1174,7 @@ class NVentory::Client
         http.tmp_dh_callback = proc { dh }
       end
       http.use_ssl = true
+      http.verify_mode = OpenSSL::SSL::VERIFY_NONE
       if @ca_file && File.exist?(@ca_file)
         http.ca_file = @ca_file
         http.verify_mode = OpenSSL::SSL::VERIFY_PEER
