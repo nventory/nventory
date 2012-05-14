@@ -1,6 +1,6 @@
 class Search 
   attr_reader :allparams
-  $excludes = %w( action csv controller format page sort include )
+  $excludes = %w( action csv controller format page per_page sort include )
 
   def initialize(allparams={})
     #### DEBUG START ####
@@ -102,6 +102,7 @@ class Search
       find_data[:includes] = includes 
       find_data[:format] = params[:format]
       find_data[:page] = params[:page]
+      find_data[:per_page] = params[:per_page]
       find_data[:sort] = sort
     else
       find_data[:iscompareq] = true
@@ -171,7 +172,7 @@ class Search
       if search_results.kind_of?(WillPaginate::Collection)
         results[:search_results] = search_results
       else
-        results[:search_results] = search_results.paginate(:page => params[:page])
+        results[:search_results] = search_results.paginate(:page => params[:page], :per_page => params[:per_page])
       end
     end
 
@@ -201,6 +202,7 @@ class Search
       select = find_data[:select] 
       format = find_data[:format]
       page = find_data[:page]
+      per_page = find_data[:per_page]
       sort = find_data[:sort]
       RAILS_DEFAULT_LOGGER.info "FIND INCLUDES:\n" + includes.to_yaml
       if (format && format == 'json') 
@@ -211,6 +213,7 @@ class Search
                     :order => sort }
         if page
           options[:page] = page
+          options[:per_page] = per_page if per_page
           search_results = mainmodel.def_scope.paginate(:all, options)
         else
           search_results = mainmodel.def_scope.find(:all, options)
@@ -236,6 +239,7 @@ class Search
                              :include => includes,
                              :conditions => [ conditions_string, *conditions_values ],
                              :page => page,
+                             :per_page => per_page,
                              :order => sort)
       end 
       return search_results
