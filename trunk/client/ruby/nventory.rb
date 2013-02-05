@@ -1309,14 +1309,22 @@ class NVentory::Client
   
   # Extract cookie from response and save it to the user's cookie store
   def extract_cookie(response, uri, login=nil)
-    if response['set-cookie']
-      cookiefile = get_cookiefile(login)
+    # response['set-cookie'] returns multiple cookies comma-separated,
+    # which is difficult to parse since Expires field also uses comma in it.
+    # Fortunately, response.get_fields('set-cookie') returns an array of cookies.
+    cookies = response.get_fields('set-cookie')
+    if cookies.nil?
+      puts "extract_cookie finds no cookie in response" if (@debug)
+      return
+    end
+    cookiefile = get_cookiefile(login)
+    cookies.each do |one_cookie|
       # It doesn't look like it matters for our purposes at the moment, but
       # according to rfc2965, 3.2.2 the Set-Cookie header can contain more
       # than one cookie, separated by commas.
-      puts "extract_cookie processing #{response['set-cookie']}" if (@debug)
-      newcookie = parse_cookie('Set-Cookie: ' + response['set-cookie'])
-      return if newcookie.nil?
+      puts "extract_cookie processing #{one_cookie}" if (@debug)
+      newcookie = parse_cookie('Set-Cookie: ' + one_cookie)
+      next if newcookie.nil?
 
       # Some cookie fields are optional, and should default to the
       # values in the request.  We need to insert these so that we
@@ -1364,8 +1372,6 @@ class NVentory::Client
       else
         puts "No cookie changes, leaving cookiefile untouched" if (@debug)
       end
-    else
-      puts "extract_cookie finds no cookie in response" if (@debug)
     end
   end
   
