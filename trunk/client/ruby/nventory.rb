@@ -23,7 +23,13 @@ rescue LoadError
   HAS_JSON_GEM = false
 end
 
-# fix for ruby http bug where it encodes the params incorrectly
+#
+# 1.9 compatible solution for ruby 1.8 net/http bug that improperly encodes params in an array.
+# Example:
+# params = {:param1 => ["1", "2", "3"]}
+# bad    =  param1=123
+# good   = param1=1&param1=2&param1=3
+#
 class Net::HTTP::Put
   def set_form_data(params, sep = '&')
       params_array = params.map do |k,v|
@@ -35,7 +41,7 @@ class Net::HTTP::Put
       end
       self.body = params_array.join(sep)
       self.content_type = 'application/x-www-form-urlencoded'
-  end
+  end if method_defined? :urlencode
 end
 
 module PasswordCallback
@@ -81,7 +87,6 @@ class NVentory::Client
     end
     @ca_file = nil
     @ca_path = nil
-    @dhparams = '/etc/nventory/dhparams'
     @delete = false  # Initialize the variable, see attr_accessor above
     @dmi_data = nil
     
@@ -112,9 +117,6 @@ class NVentory::Client
           elsif key == 'ca_path'
             @ca_path = value
             warn "Using ca_path #{@ca_path} from #{configfile}" if (@debug)
-          elsif key == 'dhparams'
-            @dhparams = value
-            warn "Using dhparams #{@dhparams} from #{configfile}" if (@debug)
           elsif key == 'cookiefile'
             @cookiefile = value
             warn "Using cookiefile #{@cookiefile} from #{configfile}" if (@debug)
@@ -1167,12 +1169,6 @@ class NVentory::Client
       http = Net::HTTP.new(uri.host, uri.port)
     end
     if uri.scheme == "https"
-      # Eliminate the OpenSSL "using default DH parameters" warning
-      if File.exist?(@dhparams)
-        dh = OpenSSL::PKey::DH.new(IO.read(@dhparams))
-        Net::HTTP.ssl_context_accessor(:tmp_dh_callback)
-        http.tmp_dh_callback = proc { dh }
-      end
       http.use_ssl = true
       if @ca_file && File.exist?(@ca_file)
         http.ca_file = @ca_file
@@ -1767,8 +1763,7 @@ class NVentory::Client
 
   def getvmstatus
     # facter virtual makes calls to commands that are under /sbin
-    ENV['PATH'] = "#{ENV['PATH']}:/sbin"
-    vmstatus = `facter virtual`
+    vmstatus = Facter.virtual
     vmstatus.chomp!
 
     # extra check to see if we're running kvm hypervisor
