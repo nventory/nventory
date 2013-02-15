@@ -1,3 +1,4 @@
+# $Id$
 begin
   # Try loading facter w/o gems first so that we don't introduce a
   # dependency on gems if it is not needed.
