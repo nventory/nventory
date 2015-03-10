@@ -1,16 +1,10 @@
-nVentory - Ruby on Rails Datacenter Inventory Manager
-http://nventory.sourceforge.net
+nventory - Ruby on Rails Datacenter Inventory Manager
+https://github.com/nventory/nventory
 
 ** This is still Alpha quality code and under heavy development **
 We use it, we modify it a lot, and we understand how it works.
 Your mileage may vary. 
 But it's pretty cool so far and getting cooler.
-
-------------------------------------------------------------------------------
-Setup
-------------------------------------------------------------------------------
-
-See the GettingStarted page on http://nventory.wiki.sourceforge.net/
 
 ------------------------------------------------------------------------------
 Help
@@ -43,4 +37,3 @@ More recent work:
 
 Jason Heiss, John Tran YELLOWPAGES.COM
 copyright 2008, YELLOWPAGES.COM LLC
-
