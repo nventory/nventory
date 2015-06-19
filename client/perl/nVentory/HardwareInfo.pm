@@ -146,6 +146,26 @@ sub get_host_serial
 		{
 			%dmidata = _getdmidata();
 			$host_serial = $dmidata{'System Information'}[0]->{'Serial Number'};
+
+			my $virtual_status = nVentory::OSInfo::getvirtualstatus();
+
+			if ($virtual_status eq 'kvm')
+			{
+				# If Serial Number is 'Not Specified', then use mac address, and nil if not found.
+				if (!$host_serial || ($host_serial eq 'Not Specified'))
+				{
+					getnicdata();
+					if ($first_nic_hwaddr)
+					{
+						$host_serial = $first_nic_hwaddr;
+					}
+					else
+					{
+						warn "Unable to find a serial number";
+						$host_serial = nil
+					}
+				}
+			}
 		}
 		elsif ($os eq 'SunOS' &&
 			(nVentory::OSInfo::getosarch() eq 'i386' || nVentory::OSInfo::getosarch() eq 'amd64') &&
