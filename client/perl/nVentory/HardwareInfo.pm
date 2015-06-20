@@ -162,7 +162,7 @@ sub get_host_serial
 					else
 					{
 						warn "Unable to find a serial number";
-						$host_serial = nil
+						$host_serial = '';
 					}
 				}
 			}
