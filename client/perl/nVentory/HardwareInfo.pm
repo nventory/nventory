@@ -1143,6 +1143,7 @@ sub getnicdata
 		my $nic;
 
 		my $os = nVentory::OSInfo::getos();
+		my $osversion = nVentory::OSInfo::getosversion();
 		
 		# get listening network ports (udp&tcp) PS-531
 		my %ports;
@@ -1178,7 +1179,7 @@ sub getnicdata
 				# mix up eth0.100 and eth0.100: (where the later is
 				# probably eth0.100:0 but got cut off by ifconfig)
 				if ($os eq 'FreeBSD' || $os eq 'SunOS' ||
-					$os eq 'Darwin' || $os eq 'Mac OS X')
+					$os eq 'Darwin' || $os eq 'Mac OS X' || ($os eq 'Red Hat CentOS Linux' && $osversion ge '7'))
 				{
 					$nic =~ s/:$//;
 				}
