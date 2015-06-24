@@ -549,7 +549,7 @@ sub getos
 					$os = "Red Hat $1 Linux";
 					$osversion = $2;
 				}
-				elsif ($rr =~ /(CentOS) release ([\d\.]+)/)
+				elsif ($rr =~ /(CentOS)(?: Linux | )release ([\d\.]+)/)
 				{
 					# Expand the OS name to include some extra terms
 					# that will make pattern matching for Linux or Red
