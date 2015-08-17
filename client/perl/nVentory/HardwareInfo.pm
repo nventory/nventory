@@ -11,7 +11,7 @@ use IPC::Open3;
 use Data::Dumper;
 
 my $debug;
-
+my $megs;
 my $host_manufacturer;
 my $host_model;
 my $host_serial;
@@ -655,8 +655,19 @@ sub get_physical_memory
 				   (($form_factor eq 'DIMM' || $form_factor eq 'FB-DIMM' ) ||
 				    ($form_factor eq '<OUT OF SPEC>' && $locator =~ /DIMM/)))
 				{
-					my ($megs, $units) = split(' ', $size);
-					die if ($units ne 'MB');
+					my ($memsize, $units) = split(' ', $size);
+					if ($units eq 'GB')
+					{
+						$megs =  int($memsize * 1024);
+					}
+					elsif ($units eq 'MB')
+					{
+						$megs =  $memsize;
+					}
+					else
+					{
+						die "Error - Unexpected memory size unit: $units";
+					}
 					# We keep both a running total of memory size and an
 					# array of the sizes of the individual sticks.
 					$temp_physical_memory += $megs;
