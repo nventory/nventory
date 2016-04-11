@@ -37,7 +37,7 @@ class Net::HTTP::Put
         if v.is_a? Array
           v.inject([]){|c, val| c << "#{urlencode(k.to_s)}=#{urlencode(val.to_s)}"}.join(sep)
         else
-          "#{urlencode(k.to_s)}=#{urlencode(v.to_s)}"          
+          "#{urlencode(k.to_s)}=#{urlencode(v.to_s)}"
         end
       end
       self.body = params_array.join(sep)
@@ -69,30 +69,13 @@ class NVentory::Client
   attr_accessor :delete
 
   def initialize(data=nil,*moredata)
-    if data || moredata
-      parms = legacy_initializeparms(data,moredata) 
-      # def initialize(debug=false, dryrun=false, configfile=nil, server=nil)
-      parms[:debug] ? (@debug = parms[:debug]) : @debug = (nil)
-      parms[:dryrun] ? (@dryrun = parms[:dryrun]) : @dryrun = (nil)
-      parms[:server] ? (@server = parms[:server]) : @server = (nil)
-      parms[:cookiefile] ? @cookiefile = parms[:cookiefile] : @cookiefile = "#{ENV['HOME']}/.nventory_cookie"
-      if parms[:proxy_server] == false
-        @proxy_server = 'nil'
-      elsif parms[:proxy_server]
-        @proxy_server = parms[:proxy_server]
-      else 
-        @proxy_server = nil
-      end
-      parms[:sso_server] ? (@sso_server = parms[:sso_server]) : (@sso_server = nil)
-      parms[:configfile] ? (configfile = parms[:configfile]) : (configfile = nil)
-    end
     @ca_file = nil
     @ca_path = nil
     @delete = false  # Initialize the variable, see attr_accessor above
     @dmi_data = nil
-    
+
     CONFIG_FILES << configfile if configfile
- 
+
     CONFIG_FILES.each do |configfile|
       if File.exist?(configfile)
         IO.foreach(configfile) do |line|
@@ -126,12 +109,30 @@ class NVentory::Client
       end
     end
 
+    if data || moredata
+      parms = legacy_initializeparms(data,moredata)
+      # def initialize(debug=false, dryrun=false, configfile=nil, server=nil)
+      parms[:debug] ? (@debug = parms[:debug]) : @debug = (nil)
+      parms[:dryrun] ? (@dryrun = parms[:dryrun]) : @dryrun = (nil)
+      parms[:server] ? (@server = parms[:server]) : @server = (nil)
+      parms[:cookiefile] ? @cookiefile = parms[:cookiefile] : @cookiefile = "#{ENV['HOME']}/.nventory_cookie"
+      if parms[:proxy_server] == false
+        @proxy_server = 'nil'
+      elsif parms[:proxy_server]
+        @proxy_server = parms[:proxy_server]
+      else
+        @proxy_server = nil
+      end
+      parms[:sso_server] ? (@sso_server = parms[:sso_server]) : (@sso_server = nil)
+      parms[:configfile] ? (configfile = parms[:configfile]) : (configfile = nil)
+    end
+
     unless @server
       @server = 'http://nventory/'
       warn "Using server #{@server}" if @debug
     end
     @sso_server = 'https://sso.example.com/' unless @sso_server
-    
+
     # Make sure the server URL ends in a / so that we can append paths to it
     # using URI.join
     if @server !~ %r{/$}
@@ -178,10 +179,10 @@ class NVentory::Client
       newdata[:regexget] = moredata[2]
       newdata[:exclude] = moredata[3]
       newdata[:andget] = moredata[4]
-      newdata[:includes] = moredata[5] 
-      newdata[:login] = moredata[6] 
+      newdata[:includes] = moredata[5]
+      newdata[:login] = moredata[6]
       newdata[:password_callback] = PasswordCallback
-    elsif data.kind_of?(Hash) 
+    elsif data.kind_of?(Hash)
       raise 'Syntax Error: Missing :objecttype' unless data[:objecttype].kind_of?(String)
       newdata = data
       newdata[:password_callback] = PasswordCallback unless newdata[:password_callback]
@@ -190,7 +191,7 @@ class NVentory::Client
     end
     return newdata
   end
-  
+
   # FIXME: get, exactget, regexget, exclude and includes should all merge into
   # a single search options hash parameter
   def get_objects(data,*moredata)
@@ -205,7 +206,7 @@ class NVentory::Client
     includes = parms[:includes]
     login = parms[:login]
     password_callback = parms[:password_callback]
-    # PS-704 - node_groups controller when format.xml, includes some custom model methods that create a lot of querying joins, so this is 
+    # PS-704 - node_groups controller when format.xml, includes some custom model methods that create a lot of querying joins, so this is
       # a way to 'override' it on cli side - the server will look for that param to skip these def methods when it renders.  webparams = {:nodefmeth => 1}
     webparams = parms[:webparams]
     #
@@ -306,7 +307,7 @@ class NVentory::Client
     end
     if webparams && webparams.kind_of?(Hash)
       webparams.each_pair{|k,v| metaget << "#{k}=#{v}"}
-    end  
+    end
 
     querystring = metaget.join('&')
 
@@ -339,7 +340,7 @@ class NVentory::Client
       response.error!
     end
 
-    if parms[:format] == 'json' 
+    if parms[:format] == 'json'
       results = JSON.parse(response.body)
     else
       #
@@ -378,7 +379,7 @@ class NVentory::Client
       uri = URI.parse(response['Location'])
       req = Net::HTTP::Get.new(uri.request_uri)
       response = send_request(req, uri, login, password_callback)
-    end  
+    end
     if !response.kind_of?(Net::HTTPOK)
       puts response.body
       response.error!
@@ -450,7 +451,7 @@ class NVentory::Client
             uri = URI.parse(response['Location'])
             req = Net::HTTP::Delete.new(uri.request_uri)
             response = send_request(req, uri, login, password_callback)
-          end  
+          end
           if response.kind_of?(Net::HTTPOK)
             successcount += 1
           else
@@ -494,7 +495,7 @@ class NVentory::Client
           req = Net::HTTP::Post.new(uri.request_uri)
           req.set_form_data(cleandata)
           response = send_request(req, uri, login, password_callback)
-        end  
+        end
         if response.kind_of?(Net::HTTPOK) || response.kind_of?(Net::HTTPCreated)
           successcount += 1
         else
@@ -503,10 +504,10 @@ class NVentory::Client
         end
       end
     end
-    
+
     successcount
   end
-  
+
   # The results argument should be a reference to a hash returned by a
   # call to get_objects.
   def delete_objects(objecttypes, results, login, password_callback=PasswordCallback)
@@ -520,7 +521,7 @@ class NVentory::Client
           uri = URI.parse(response['Location'])
           req = Net::HTTP::Delete.new(uri.request_uri)
           response = send_request(req, uri, login, password_callback)
-        end  
+        end
         if response.kind_of?(Net::HTTPOK)
           successcount = 0
         else
@@ -532,7 +533,7 @@ class NVentory::Client
     end
     successcount
   end
-  
+
   def register
     data = {}
 
@@ -588,12 +589,12 @@ class NVentory::Client
     data['timezone'] = Facter['timezone'].value if Facter['timezone']
 
     # Need custom facts for these
-    #data['virtual_client_ids'] = 
+    #data['virtual_client_ids'] =
 
     cpu_percent = getcpupercent
     login_count = getlogincount
     disk_usage = getdiskusage
-    # have to round it up because server code only takes integer 
+    # have to round it up because server code only takes integer
     data['utilization_metric[percent_cpu][value]'] = cpu_percent.round if cpu_percent
     data['utilization_metric[login_count][value]'] = login_count if login_count
     data['used_space'] = disk_usage[:used_space] if disk_usage
@@ -651,17 +652,17 @@ class NVentory::Client
       # for the os_processor_count above.
       data['processor_count'] = Facter['sp_number_processors'].value
     end
-      
-    if Facter['physicalprocessorcount'] 
-      data['processor_count'] = Facter['physicalprocessorcount'].value 
-    else 
+
+    if Facter['physicalprocessorcount']
+      data['processor_count'] = Facter['physicalprocessorcount'].value
+    else
       # need to get from dmidecode
     end
-    
+
     data['processor_core_count'] = get_cpu_core_count
-    #data['processor_socket_count'] = 
-    #data['power_supply_count'] = 
-    #data['physical_memory_sizes'] = 
+    #data['processor_socket_count'] =
+    #data['power_supply_count'] =
+    #data['physical_memory_sizes'] =
 
     physical_memory = get_physical_memory
     data['physical_memory'] = Facter::Memory.scale_number(physical_memory, "MB") if physical_memory
@@ -673,17 +674,17 @@ class NVentory::Client
         data["network_interfaces[#{nic}][name]"] = nic
         data["network_interfaces[#{nic}][hardware_address]"] = Facter["macaddress_#{nic}"].value
         #data["network_interfaces[#{nic}][interface_type]"]
-        #data["network_interfaces[#{nic}][physical]"] = 
-        #data["network_interfaces[#{nic}][up]"] = 
-        #data["network_interfaces[#{nic}][link]"] = 
-        #data["network_interfaces[#{nic}][autonegotiate]"] = 
-        #data["network_interfaces[#{nic}][speed]"] = 
-        #data["network_interfaces[#{nic}][full_duplex]"] = 
+        #data["network_interfaces[#{nic}][physical]"] =
+        #data["network_interfaces[#{nic}][up]"] =
+        #data["network_interfaces[#{nic}][link]"] =
+        #data["network_interfaces[#{nic}][autonegotiate]"] =
+        #data["network_interfaces[#{nic}][speed]"] =
+        #data["network_interfaces[#{nic}][full_duplex]"] =
         # Facter only captures one address per interface
         data["network_interfaces[#{nic}][ip_addresses][0][address]"] = Facter["ipaddress_#{nic}"].value
         data["network_interfaces[#{nic}][ip_addresses][0][address_type]"] = 'ipv4'
         data["network_interfaces[#{nic}][ip_addresses][0][netmask]"] = Facter["netmask_#{nic}"].value
-        #data["network_interfaces[#{nic}][ip_addresses][0][broadcast]"] = 
+        #data["network_interfaces[#{nic}][ip_addresses][0][broadcast]"] =
       end
     end
     # get additional nic info that facter doesn't know about
@@ -731,7 +732,7 @@ class NVentory::Client
     # Looks like this no longer works. virtual_client_ids is not valid
     # field and causes ALL nodes to return....
 #    if data['hardware_profile[model]'] == 'VMware Virtual Platform'
-#      getdata = {} 
+#      getdata = {}
 #      getdata[:objecttype] = 'nodes'
 #      getdata[:exactget] = {'virtual_client_ids' => [data['uniqueid']]}
 #      getdata[:login] = 'autoreg'
@@ -747,13 +748,13 @@ class NVentory::Client
     console_type = get_console_type
     if console_type == "Dell DRAC"
       data['console_type'] = "Dell DRAC"
-      
+
       drac_info = get_drac_info
-  
+
       # Create a NIC for the DRAC and associate it this node
       unless drac_info.empty?
         drac_name = (drac_info[:name] && !drac_info[:name].empty?)? drac_info[:name] : "DRAC"
-        data["network_interfaces[#{drac_name}][name]"] = drac_name 
+        data["network_interfaces[#{drac_name}][name]"] = drac_name
         data["network_interfaces[#{drac_name}][hardware_address]"] = drac_info[:mac_address]
         data["network_interfaces[#{drac_name}][ip_addresses][0][address]"] = drac_info[:ip_address]
         data["network_interfaces[#{drac_name}][ip_addresses][0][address_type]"] = "ipv4"
@@ -775,7 +776,7 @@ class NVentory::Client
     # host was renamed).
     results = nil
     if data['uniqueid']
-      getdata = {} 
+      getdata = {}
       getdata[:objecttype] = 'nodes'
       getdata[:exactget] = {'uniqueid' => [data['uniqueid']]}
       getdata[:login] = 'autoreg'
@@ -784,14 +785,14 @@ class NVentory::Client
       # Check for a match of the reverse uniqueid.
       # Background:
       # Dmidecode versions earlier than 2.10 display
-      # the first three fields of the UUID in reverse order 
+      # the first three fields of the UUID in reverse order
       # due to the use of Big-endian rather than Little-endian
       # byte encoding.
-      # Starting with version 2.10, dmidecode uses Little-endian 
-      # when it finds an SMBIOS >= 2.6. UUID's reported from SMBIOS' 
+      # Starting with version 2.10, dmidecode uses Little-endian
+      # when it finds an SMBIOS >= 2.6. UUID's reported from SMBIOS'
       # earlier than 2.6 are considered "incorrect".
       #
-      # After a rebuild/upgrade, rather than creating a new node 
+      # After a rebuild/upgrade, rather than creating a new node
       # entry for an existing asset, we'll check for the flipped
       # version of the uniqueid.
       #
@@ -803,9 +804,9 @@ class NVentory::Client
     end
 
     # If we failed to find an existing entry based on the unique id,
-    # fall back to the hostname.  
+    # fall back to the hostname.
     if results.empty? && data['name']
-      getdata = {} 
+      getdata = {}
       getdata[:objecttype] = 'nodes'
       getdata[:exactget] = {'name' => [data['name']]}
       getdata[:login] = 'autoreg'
@@ -1014,14 +1015,14 @@ class NVentory::Client
   def remove_tag_from_node_group(ng_hash, tag_name, login, password_callback=PasswordCallback)
     tag_found = get_objects({:objecttype => 'tags', :exactget => {:name => tag_name}})
     if tag_found.empty?
-      puts "ERROR: Could not find any tags with the name #{tag_name}" 
+      puts "ERROR: Could not find any tags with the name #{tag_name}"
       exit
     end
     # tag_found is hash, even tho only one result
     (tag_data = tag_found[tag_found.keys.first]) && (tag_id = tag_data['id'])
     taggings_to_del = {}
     ng_hash.each_pair do |ng_name,ng_data|
-      get_data = {:objecttype => 'taggings', 
+      get_data = {:objecttype => 'taggings',
                   :exactget => { :taggable_type => 'NodeGroup', :taggable_id => ng_data['id'], :tag_id => tag_id } }
       tagging_found = get_objects(get_data)
       unless tagging_found.empty?
@@ -1045,7 +1046,7 @@ class NVentory::Client
       set_objects('graffitis', nil,
         {  :name => name,
            :value => value,
-           :graffitiable_id => obj['id'],           
+           :graffitiable_id => obj['id'],
            :graffitiable_type => obj_type,
         },
         login, password_callback);
@@ -1124,7 +1125,7 @@ class NVentory::Client
     end
     return uniqueid
   end
- 
+
   def self.getuuid
     uuid = nil
     # dmidecode will fail if not run as root
@@ -1154,7 +1155,7 @@ class NVentory::Client
     end
     return result
   end
-  
+
   #
   # Private methods
   #
@@ -1174,7 +1175,7 @@ class NVentory::Client
       if @ca_file && File.exist?(@ca_file)
         http.ca_file = @ca_file
         http.verify_mode = OpenSSL::SSL::VERIFY_PEER
-      end 
+      end
       if @ca_path && File.directory?(@ca_path)
         http.ca_path = @ca_path
         http.verify_mode = OpenSSL::SSL::VERIFY_PEER
@@ -1182,8 +1183,8 @@ class NVentory::Client
     end
     http
   end
-  
-  # Returns the path to the cookiefile to be used. 
+
+  # Returns the path to the cookiefile to be used.
   # Create the file and correct permissions on
   # the cookiefile if needed
   def get_cookiefile(login=nil)
@@ -1209,7 +1210,7 @@ class NVentory::Client
     end
     @cookiefile
   end
-  
+
   # Sigh, Ruby doesn't have a library for handling a persistent
   # cookie store so we have to do the dirty work ourselves.  This
   # is by no means a full implementation, it's just enough to do
@@ -1259,7 +1260,7 @@ class NVentory::Client
     end
     cookie
   end
-  
+
   # Returns an array of cookies from the specified cookiefile
   def read_cookiefile(cookiefile)
     warn "Using cookies from #{cookiefile}" if (@debug)
@@ -1278,7 +1279,7 @@ class NVentory::Client
     end
     cookies
   end
-  
+
   # This returns any cookies in the cookiefile which have domain and path
   # settings that match the specified uri.
   def get_cookies_for_uri(cookiefile, uri)
@@ -1303,7 +1304,7 @@ class NVentory::Client
     cookies << latest_cookie[1] unless latest_cookie.empty?
     cookies
   end
-  
+
   # Extract cookie from response and save it to the user's cookie store
   def extract_cookie(response, uri, login=nil)
     # response['set-cookie'] returns multiple cookies comma-separated,
@@ -1371,7 +1372,7 @@ class NVentory::Client
       end
     end
   end
-  
+
   # Sends requests to the nVentory server and handles any redirects to
   # authentication pages or services.
   def send_request(req, uri, login, password_callback=PasswordCallback,loopcounter=0,stopflag=false)
@@ -1391,10 +1392,10 @@ class NVentory::Client
       puts "Inserting cookies into request: #{cookiestring}" if (@debug)
       req['Cookie'] = cookiestring
     end
-    
+
     response = make_http(uri).request(req)
     extract_cookie(response, uri, login)
-    
+
     # Check for signs that the server wants us to authenticate
     password = nil
     if login == 'autoreg'
@@ -1411,7 +1412,7 @@ class NVentory::Client
       puts "Server responsed with redirect to nVentory login: #{response['Location']}" if (@debug)
       loginuri = URI.parse(response['Location'])
       ####################### Fix by darrendao - force it to use https ##########################
-      # This is needed because if you're not usign https, then you will get 
+      # This is needed because if you're not usign https, then you will get
       # redirected to https login page, rather than being logged in. So the check down there will
       # will.
       loginuri.scheme = 'https'
@@ -1450,7 +1451,7 @@ class NVentory::Client
         puts "Authentication against nVentory server failed" if (@debug)
       end
     end
-    
+
     # An SSO-enabled app will redirect to SSO if authentication is required
     if response.kind_of?(Net::HTTPFound) && response['Location'] && URI.parse(response['Location']).host == URI.parse(@sso_server).host
       puts "Server responsed with redirect to SSO login: #{response['Location']}" if (@debug)
@@ -1485,7 +1486,7 @@ class NVentory::Client
       while [Net::HTTPMovedPermanently, Net::HTTPFound].include?(loginresponse.class)
         if loginresponse.kind_of?(Net::HTTPFound) && loginresponse['Location'] =~ /sso.*\/session\/token.*/
           puts "** Found session token" if @debug
-          break 
+          break
         end
         puts "** Following redirect #{loginresponse.class.to_s} => #{loginresponse['Location'].to_s}" if @debug
         loginuri = URI.parse(loginresponse['Location'])
@@ -1503,7 +1504,7 @@ class NVentory::Client
           end
       end
 
-      # SSO does a number of redirects until you get to the right domain but should just follow once and get the cookie, will become Net::HTTPNotAcceptable (406). 
+      # SSO does a number of redirects until you get to the right domain but should just follow once and get the cookie, will become Net::HTTPNotAcceptable (406).
       if loginresponse.kind_of?(Net::HTTPFound) && loginresponse['Location'] =~ /sso.*\/session\/token.*/
         puts "** Following redirect #{loginresponse.class.to_s} => #{loginresponse['Location'].to_s}" if @debug
         loginuri = URI.parse(loginresponse['Location'])
@@ -1523,10 +1524,10 @@ class NVentory::Client
         puts "Authentication against server failed" if (@debug)
       end
     end
-    
+
     response
   end
-  
+
   def xml_to_ruby(xmlnode)
     # The server includes a hint as to the type of data structure
     # in the XML
@@ -1573,7 +1574,7 @@ class NVentory::Client
       end
     end
   end
-  
+
   def get_sar_data(sar_dir=nil, day = nil)
     sar = find_sar
     result = []
@@ -1592,7 +1593,7 @@ class NVentory::Client
   end
 
   # I'm sure there's a better way to do all of these. However,
-  # I'm just following the way the code was written in Perl. 
+  # I'm just following the way the code was written in Perl.
   def getcpupercent
     return nil if !Facter['kernel'] or Facter['kernel'].value != 'Linux'
     sar_dir = "/var/log/sa"
@@ -1605,7 +1606,7 @@ class NVentory::Client
     # all hours in same day so just make list of all hours to look for
     if end_date == start_date
       today_sar = get_sar_data
-      return false if today_sar.empty? 
+      return false if today_sar.empty?
 
       # We only take avg of last 3 hours
       (start_time.hour..end_time.hour).each do | hour |
@@ -1625,7 +1626,7 @@ class NVentory::Client
            data_points << $1.to_f if line =~ /^#{hour}:.*\s(\S+)$/
          end
       end
-    
+
       # Parse yesterday sar data
       (start_time.hour..23).each do | hour |
          hour = "0#{hour}" if hour < 10
@@ -1660,7 +1661,7 @@ class NVentory::Client
       warn "Failed to run 'last' command"
       return nil
     end
-    
+
 
     counter = 0
 
@@ -1669,9 +1670,9 @@ class NVentory::Client
       time_str = target_time.strftime("%b %d %H")
       content.split("\n").each do |line|
         counter += 1 if line =~ /#{time_str}/
-      end 
+      end
     end
-    return counter 
+    return counter
   end
 
   # This is based on the perl version in OSInfo.pm
@@ -1722,14 +1723,14 @@ class NVentory::Client
   def getmountedvolumes
     # only support Linux for now
     return {} unless Facter['kernel'] && Facter['kernel'].value == 'Linux'
-   
+
     dir = "/etc"
     mounted = {}
-    
+
     # AUTOFS - gather only files named auto[._]*
     Dir.glob(File.join(dir, "*")).each do |file|
-      next if file !~ /^auto[._].*/ 
-      
+      next if file !~ /^auto[._].*/
+
       # AUTOFS - match only lines that look like nfs syntax such as host:/path
       IO.foreach(file) do |line|
         if  line =~ /\w:\S/  && line !~ /^\s*#/
@@ -1747,9 +1748,9 @@ class NVentory::Client
       end  # IO.foreach
     end # Dir.glob
 
-    # FSTAB - has diff syntax than AUTOFS.  Example: "server:/usr/local/pub    /pub   nfs    rsize=8192,wsize=8192,timeo=14,intr"   
+    # FSTAB - has diff syntax than AUTOFS.  Example: "server:/usr/local/pub    /pub   nfs    rsize=8192,wsize=8192,timeo=14,intr"
     IO.foreach("/etc/fstab") do |line|
-      if line =~ /^(\w[\w\S]+):(\S+)\s+(\S+)\s+nfs/ 
+      if line =~ /^(\w[\w\S]+):(\S+)\s+(\S+)\s+nfs/
         host = $1
         vol = $2
         mnt = $3
@@ -1759,7 +1760,7 @@ class NVentory::Client
         mounted["volumes[mounted][#{mnt}][type]"] = 'nfs'
       end
     end # IO.foreach
-    return mounted  
+    return mounted
   end
 
   def getvmstatus
@@ -1788,7 +1789,7 @@ class NVentory::Client
     coreid = nil
     corecount = nil
     cores = {}
-    if os == 'Linux' 
+    if os == 'Linux'
       IO.foreach("/proc/cpuinfo") do |line|
         if line =~ /^processor\s*: (\d+)/
           physicalid = nil
@@ -1800,7 +1801,7 @@ class NVentory::Client
         end
         if physicalid && coreid
           cores["#{physicalid}:#{coreid}"] = 1;
-        end 
+        end
       end  # IO.foreach
       corecount = cores.size
     end # if statement
@@ -1879,13 +1880,13 @@ class NVentory::Client
     chassis = {}
     result = nil
     begin
-      #result = `omreport modularenclosure -fmt ssv` 
+      #result = `omreport modularenclosure -fmt ssv`
       #result.split("\n").each do |line|
       #  if line =~ /Service Tag/
       #    chassis[:service_tag] = line.split(";")[1].strip
       #    break
       #  end
-      #end 
+      #end
       timeout(5) do
         result = `omreport chassis info -fmt ssv`
       end
@@ -1951,7 +1952,7 @@ class NVentory::Client
     os = Facter['kernel'].value
     # only support Linux right now
     return info if os != 'Linux'
-   
+
     nic = nil
     result = `/sbin/ifconfig -a`
     result.split("\n").each do |line|
@@ -1967,7 +1968,7 @@ class NVentory::Client
       elsif line =~ /^\s+UP / || line =~ /flags=.*UP,/
         info[nic][:up] = 1
       end
-    end 
+    end
 
     # Get additional info
     info.each do |nic, nic_info|
@@ -2005,7 +2006,7 @@ class NVentory::Client
       output=%x{/usr/local/sbin/dmidecode 2>/dev/null}
     when 'NetBSD'
       return nil unless FileTest.exists?("/usr/pkg/sbin/dmidecode")
-   
+
       output=%x{/usr/pkg/sbin/dmidecode 2>/dev/null}
     when 'SunOS'
       return nil unless FileTest.exists?("/usr/sbin/smbios")
@@ -2019,7 +2020,7 @@ class NVentory::Client
     look_for_section_name = false
     dmi_section = nil
     dmi_section_data = {}
-    dmi_section_array = nil 
+    dmi_section_array = nil
     @dmi_data = {}
 
     output.split("\n").each do |line|
@@ -2049,7 +2050,7 @@ class NVentory::Client
       end
     end
     @dmi_data
-  end  
+  end
 
   # This method is based on the one in the perl client
   def get_physical_memory
@@ -2073,7 +2074,7 @@ class NVentory::Client
       # Unfortunately some DIMMs are reported with a form
       # factor of '<OUT OF SPEC>'.  In that case fall back to
       # checking for signs of it being a DIMM in the locator
-      # field. 
+      # field.
       if (size != 'No Module Installed' &&
             ((form_factor == 'DIMM' || form_factor == 'FB-DIMM' || form_factor == 'SODIMM') ||
              (form_factor == '<OUT OF SPEC>' && locator =~ /DIMM/)))
