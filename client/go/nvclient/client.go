@@ -21,6 +21,7 @@ import (
 type Client interface {
 	GetObjects(objecttypes string, conditions map[string][]string, includes map[string][]string) (Result, error)
 	SetObjects(objecttypes string, conditions map[string][]string, includes map[string][]string, set map[string]string, login string) (string, error)
+	GetAllSubsystemNames(objectType string) ([]string, error)
 }
 
 func NewNvClient(host string, login string, httpClientCallback func(username string) *http.Client, log *Log) Client {
@@ -62,7 +63,7 @@ func (d *NvClient) GetServer() string {
 }
 
 func (f *NvClient) GetObjects(object_type string, conditions map[string][]string, includes map[string][]string) (Result, error) {
-	i, err := f.getAllSubsystemNames(object_type)
+	i, err := f.GetAllSubsystemNames(object_type)
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +84,7 @@ func (f *NvClient) GetObjects(object_type string, conditions map[string][]string
 }
 
 func (f *NvClient) SetObjects(object_type string, conditions map[string][]string, includes map[string][]string, set map[string]string, login string) (string, error) {
-	_, err := f.getAllSubsystemNames(object_type)
+	_, err := f.GetAllSubsystemNames(object_type)
 	if err != nil {
 		return "Unable to get all subsystem names.", err
 	}
@@ -98,7 +99,7 @@ func (f *NvClient) SetObjects(object_type string, conditions map[string][]string
 		log.Fatal("Unable to read response body.")
 	}
 
-	res, err := f.getResultsFromResponse(responseStr)
+	res, err := GetResultsFromResponse(responseStr)
 
 	numSuccess := 0
 
@@ -254,7 +255,7 @@ func singularize(plural string) string {
 }
 
 func (f *NvClient) GetAllFields(object_type string, command map[string][]string, includes map[string][]string, flags []string) (Result, error) {
-	fields, err := f.getAllSubsystemNames(object_type)
+	fields, err := f.GetAllSubsystemNames(object_type)
 	if err != nil {
 		return nil, err
 	}
@@ -271,7 +272,7 @@ func (f *NvClient) GetAllFields(object_type string, command map[string][]string,
 		log.Fatal("Unable to read response body.")
 	}
 
-	return f.getResultsFromResponse(responseStr)
+	return GetResultsFromResponse(responseStr)
 }
 
 func intersection(allSubsystemNames []string, fields []string) []string {
@@ -286,7 +287,7 @@ func intersection(allSubsystemNames []string, fields []string) []string {
 	return result
 }
 
-func (f *NvClient) getAllSubsystemNames(objectType string) ([]string, error) {
+func (f *NvClient) GetAllSubsystemNames(objectType string) ([]string, error) {
 	var err error
 	if len(f.subsystemNames) == 0 {
 		// query http://opsdb.wc1.example.com/nodes/field_names.xml
@@ -381,83 +382,7 @@ func (f *NvClient) getCreateUrl(object_type string, query string) string {
 }
 
 func (f *NvClient) getFieldValue(response string) (Result, error) {
-	return f.getResultsFromResponse(response)
-}
-
-func (f *NvClient) getResultFromDom(node types.Node) (Result, error) {
-	rootChildren, err := node.ChildNodes()
-
-	if err != nil {
-		return nil, err
-	}
-
-	var isArray bool
-	var isNil bool
-	e, ok := node.(types.Element)
-	if ok {
-		attr, err := e.GetAttribute("type")
-		if err == nil && attr.Value() == "array" {
-			isArray = true
-		}
-		attr, err = e.GetAttribute("nil")
-		if err == nil && attr.Value() == "true" {
-			isNil = true
-		}
-	}
-	if isNil {
-		if isArray {
-			return nil, nil
-		}
-		return &ResultValue{Name: node.NodeName(), Value: ""}, nil
-	}
-
-	if isArray {
-		// Convert this node to array node
-		arr := &ResultArray{Array: make([]Result, 0), Name: node.NodeName()}
-		for _, n := range rootChildren {
-			switch n.NodeType() {
-			case clib.ElementNode:
-				arrChild, _ := f.getResultFromDom(n)
-				arr.Array = append(arr.Array, arrChild)
-			}
-		}
-		return arr, nil
-	}
-
-	result := &ResultMap{Name: node.NodeName()}
-	// Looping through each element in search (e.g. <node>)
-	for _, n := range rootChildren {
-		switch n.NodeType() {
-		case clib.ElementNode:
-			// traverse down to parse.
-			r, _ := f.getResultFromDom(n)
-			result.Add(n.NodeName(), r)
-		case clib.TextNode:
-			// ignore
-			if len(rootChildren) == 1 {
-				return &ResultValue{Value: n.NodeValue()}, nil
-			}
-		default:
-			f.logger.Warning.Println(fmt.Sprintf("Unknown node type!!! %v %v", n.NodeType(), n.NodeName()))
-		}
-	}
-	return result, nil
-}
-
-func (f *NvClient) getResultsFromResponse(response string) (Result, error) {
-
-	d, err := libxml2.ParseString(response)
-	if err != nil {
-		log.Fatal("Unable to parse response as xml:\n%v", response)
-	}
-
-	root, err := d.DocumentElement()
-	if err != nil {
-		return nil, err
-	}
-
-	result, err := f.getResultFromDom(root)
-	return result, err
+	return GetResultsFromResponse(response)
 }
 
 func getChildFieldValue(node types.Node, parent string, fields []string) map[string]string {

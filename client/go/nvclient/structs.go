@@ -7,14 +7,14 @@ import "strings"
   *******/
 
 type Result interface {
-	result()
+	Result()
 	ID() string
 	SetID(id string)
 }
 
-func (r *ResultArray) result() {}
-func (r *ResultMap) result()   {}
-func (r *ResultValue) result() {}
+func (r *ResultArray) Result() {}
+func (r *ResultMap) Result()   {}
+func (r *ResultValue) Result() {}
 
 type ResultArray struct {
 	Array []Result
