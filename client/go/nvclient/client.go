@@ -36,7 +36,6 @@ func NewNvClient(host string, login string, httpClientCallback func(username str
 }
 
 type NvClient struct {
-	//httpClient         *http.Client
 	username           string
 	server             string
 	HttpClientCallback func(username string) *http.Client
@@ -49,15 +48,6 @@ type NvClient struct {
 	subsystemNames []string
 }
 
-/*
-func (n *NvClient) addClient(client *http.Client) {
-	n.httpClient = client
-}
-
-func (n *NvClient) getClient() *http.Client {
-	return n.httpClient
-}
-*/
 func (d *NvClient) GetServer() string {
 	return d.server
 }
