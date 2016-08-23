@@ -9,7 +9,6 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"os"
 	"regexp"
 	"strings"
 
@@ -24,14 +23,15 @@ type Client interface {
 	GetAllSubsystemNames(objectType string) ([]string, error)
 }
 
-func NewNvClient(host string, login string, httpClientCallback func(username string) *http.Client, log *Log) Client {
+func NewNvClient(host string, login string, httpClientCallback func(username string) *http.Client, log *Log, input *bufio.Reader) Client {
 	client := &NvClient{
 		server:             host,
 		username:           login,
 		HttpClientCallback: httpClientCallback,
 	}
-	client.Input = bufio.NewReader(os.Stdin)
+	client.Input = input
 	client.logger = log
+	client.Input = input
 	return client
 }
 
