@@ -15,8 +15,8 @@ import (
 
 	"golang.org/x/net/publicsuffix"
 
-	"github.com/atclate/nventory/client/go/nvclient"
 	logger "github.com/atclate/go-logger"
+	"github.com/atclate/nventory/client/go/nvclient"
 
 	"bufio"
 	"os"
@@ -27,9 +27,9 @@ const autoreg = "autoreg"
 var autoreg_password = "REPLACE_ME_WITH_AUTOREG_PASSWORD"
 
 type NventoryDriver struct {
-	Server string
-	Input *bufio.Reader
-	httpClientMap  map[string]*http.Client
+	Server        string
+	Input         *bufio.Reader
+	httpClientMap map[string]*http.Client
 }
 
 func (d NventoryDriver) GetServer() string {

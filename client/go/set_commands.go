@@ -15,7 +15,7 @@ func (f *SetValueFlags) ToString() string {
 }
 
 type SetCommands struct {
-	destFlags *SearchFlags
+	destFlags     *SearchFlags
 	setValueFlags *SetValueFlags
 	searchCommand *SearchCommands
 }

@@ -1,22 +1,23 @@
 package main
 
 import (
-	"os"
 	"io/ioutil"
+	"os"
 
-	"github.com/kardianos/osext"
-	"strings"
-	"errors"
-	"path/filepath"
 	"bufio"
-	"github.com/spf13/cobra"
+	"errors"
 	"fmt"
-	"github.com/atclate/nventory/client/go/nvclient"
+	"path/filepath"
+	"strings"
+
 	logger "github.com/atclate/go-logger"
+	"github.com/atclate/nventory/client/go/nvclient"
+	"github.com/kardianos/osext"
+	"github.com/spf13/cobra"
 )
 
 var (
-	version	      = "0.0.0"
+	version = "0.0.0"
 
 	dst           SearchFlags
 	setValueFlags SetValueFlags
@@ -34,7 +35,7 @@ func SetupCli(app *cobra.Command) {
 	// Get version from VERSION file.
 	filename, err := osext.ExecutableFolder()
 	if err == nil {
-		ver, err := getVersionFromVersionFile(filepath.Join(filename,"VERSION"))
+		ver, err := getVersionFromVersionFile(filepath.Join(filename, "VERSION"))
 		if err == nil {
 			version = ver
 		}
@@ -140,6 +141,3 @@ func getVersionFromVersionFile(filename string) (string, error) {
 		return "", errors.New("No version found.")
 	}
 }
-
-
-

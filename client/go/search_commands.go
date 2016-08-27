@@ -2,24 +2,25 @@ package main
 
 import (
 	_ "strings"
+
 	"github.com/spf13/cobra"
 )
 
 type SearchCommands struct {
-	destFlags     *SearchFlags
+	destFlags      *SearchFlags
 	nodeGroupNodes bool
-	nodeGroup     bool
+	nodeGroup      bool
 
-	debug         bool
-	dryRun        bool
-	yes           bool
-	register      bool
-	noSwitchport  bool
-	noStorage     bool
-	allFields     bool
-	username      string
-	server        string
-	objectType    string
+	debug        bool
+	dryRun       bool
+	yes          bool
+	register     bool
+	noSwitchport bool
+	noStorage    bool
+	allFields    bool
+	username     string
+	server       string
+	objectType   string
 
 	withAliases   bool
 	newOpsDB      bool
@@ -35,9 +36,6 @@ func (c *SearchCommands) GetSearchFlags() *SearchFlags {
 func (f *SearchCommands) Init(dest *SearchFlags, app *cobra.Command) {
 	f.destFlags = dest
 	dest.Init(app)
-
-
-
 
 	app.PersistentFlags().BoolVar(&f.debug, "debug", false, "debug output")
 	app.PersistentFlags().BoolVar(&f.dryRun, "dry-run", false, "Test run without modifying opsdb")
@@ -57,7 +55,6 @@ func (f *SearchCommands) Init(dest *SearchFlags, app *cobra.Command) {
 	//app.PersistentFlags().MarkHidden("showQueryJson")
 	app.Flags().BoolVar(&f.allFields, "allfields", false, "Display all fields for selected objects. One or more fields may be specified to be excluded from the query, seperate multiple fields with commas.")
 	app.PersistentFlags().BoolVar(&f.showVersion, "version", false, "print the version")
-
 
 	app.Flags().BoolVar(&f.nodeGroupNodes, "get_nodegroup_nodes", false, "Display all the members of the given node group including virtuals")
 	// Aliases: []string{"ngn", "getnodegroupnodes"},
