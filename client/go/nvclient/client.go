@@ -15,6 +15,8 @@ import (
 	"github.com/lestrrat/go-libxml2"
 	"github.com/lestrrat/go-libxml2/clib"
 	"github.com/lestrrat/go-libxml2/types"
+
+	logger "github.com/atclate/go-logger"
 )
 
 type Client interface {
@@ -23,14 +25,12 @@ type Client interface {
 	GetAllSubsystemNames(objectType string) ([]string, error)
 }
 
-func NewNvClient(host string, login string, httpClientCallback func(username string) *http.Client, log *Log, input *bufio.Reader) Client {
+func NewNvClient(host string, login string, httpClientCallback func(username string) *http.Client, input *bufio.Reader) Client {
 	client := &NvClient{
 		server:             host,
 		username:           login,
 		HttpClientCallback: httpClientCallback,
 	}
-	client.Input = input
-	client.logger = log
 	client.Input = input
 	return client
 }
@@ -39,7 +39,6 @@ type NvClient struct {
 	username           string
 	server             string
 	HttpClientCallback func(username string) *http.Client
-	logger             *Log
 
 	Input *bufio.Reader
 
@@ -60,7 +59,7 @@ func (f *NvClient) GetObjects(object_type string, conditions map[string][]string
 	includes["include"] = intersection(i, includes["include"])
 
 	u := f.getSearchUrl(object_type, conditions, includes)
-	f.logger.Debug.Println(fmt.Sprintf("URL: %v", u))
+	logger.Debug.Println(fmt.Sprintf("URL: %v", u))
 
 	resp, _ := f.HttpClientCallback(f.username).Get(u)
 
@@ -80,7 +79,7 @@ func (f *NvClient) SetObjects(object_type string, conditions map[string][]string
 	}
 
 	u := f.getSearchUrl(object_type, conditions, includes)
-	f.logger.Debug.Println(fmt.Sprintf("Search URL: %v", u))
+	logger.Debug.Println(fmt.Sprintf("Search URL: %v", u))
 
 	resp, _ := f.HttpClientCallback(f.username).Get(u)
 
@@ -105,7 +104,7 @@ func (f *NvClient) SetObjects(object_type string, conditions map[string][]string
 						if idVal == nil {
 
 						} else if id, ok := idVal.(*ResultValue); ok && id.Value != "" {
-							f.logger.Debug.Printf("Set: %v", set)
+							logger.Debug.Printf("Set: %v", set)
 							values := url.Values{}
 							for k, v := range set {
 								re, err := regexp.Compile(`[.+]`)
@@ -117,13 +116,13 @@ func (f *NvClient) SetObjects(object_type string, conditions map[string][]string
 							}
 
 							u := f.getSetUrl(object_type, id.Value, values.Encode())
-							f.logger.Debug.Printf("Set URL: %v\n", u)
+							logger.Debug.Printf("Set URL: %v\n", u)
 
 							req, err := http.NewRequest("PUT", u, nil)
 							if err != nil {
 								fmt.Println("Error creating PUT request for url: " + u)
 							} else {
-								f.logger.Debug.Printf("PUT Request: %v", req)
+								logger.Debug.Printf("PUT Request: %v", req)
 								isRedirect := true
 								err = nil
 								client := f.HttpClientCallback(login)
@@ -133,7 +132,7 @@ func (f *NvClient) SetObjects(object_type string, conditions map[string][]string
 									resp, err = client.Do(req)
 									isRedirect = isRedirectResponse(resp)
 									if isRedirect {
-										f.logger.Debug.Printf("Redirecting to %v from %v\n", getHeaderLocation(resp), req.URL.String())
+										logger.Debug.Printf("Redirecting to %v from %v\n", getHeaderLocation(resp), req.URL.String())
 										u, err := url.Parse(getHeaderLocation(resp))
 										if err == nil {
 											req.URL = u
@@ -146,7 +145,7 @@ func (f *NvClient) SetObjects(object_type string, conditions map[string][]string
 								} else {
 									body, err := readResponseBody(resp.Body)
 									if err == nil {
-										f.logger.Debug.Printf("Success Response Body:\n%v\n", body)
+										logger.Debug.Printf("Success Response Body:\n%v\n", body)
 										numSuccess++
 									} else {
 										fmt.Printf("Error: %v", err)
@@ -179,7 +178,7 @@ func (f *NvClient) SetObjects(object_type string, conditions map[string][]string
 
 	con := PromptUserConfirmation(fmt.Sprintf("This will create new entry (%v), continue?  [y/N]: ", name), f.Input)
 	if con {
-		f.logger.Debug.Printf("Set: %v", set)
+		logger.Debug.Printf("Set: %v", set)
 		values := url.Values{}
 		for k, v := range set {
 			re, err := regexp.Compile(`[.+]`)
@@ -191,22 +190,22 @@ func (f *NvClient) SetObjects(object_type string, conditions map[string][]string
 		}
 
 		u := f.getCreateUrl(object_type, values.Encode())
-		f.logger.Debug.Printf("Create URL: %v\n", u)
+		logger.Debug.Printf("Create URL: %v\n", u)
 
 		req, err := http.NewRequest("POST", u, nil)
 		if err != nil {
 			fmt.Println("Error creating POST request for url: " + u)
 		} else {
-			f.logger.Debug.Printf("POST Request: %v", req)
+			logger.Debug.Printf("POST Request: %v", req)
 			isRedirect := true
 			err = nil
 			for isRedirect && err == nil {
 				req, _ = http.NewRequest(req.Method, req.URL.String(), nil)
 				resp, err = f.HttpClientCallback(login).Do(req)
-				f.logger.Debug.Printf("Response from %v:\n%v\n", req.URL.String(), resp)
+				logger.Debug.Printf("Response from %v:\n%v\n", req.URL.String(), resp)
 				isRedirect = isRedirectResponse(resp)
 				if isRedirect {
-					f.logger.Debug.Printf("Redirecting to %v from %v\n", getHeaderLocation(resp), req.URL.String())
+					logger.Debug.Printf("Redirecting to %v from %v\n", getHeaderLocation(resp), req.URL.String())
 					u, err := url.Parse(getHeaderLocation(resp))
 					if err == nil {
 						req.URL = u
@@ -219,7 +218,7 @@ func (f *NvClient) SetObjects(object_type string, conditions map[string][]string
 			} else {
 				body, err := readResponseBody(resp.Body)
 				if err == nil {
-					f.logger.Debug.Printf("Success Response Body:\n%v\n", body)
+					logger.Debug.Printf("Success Response Body:\n%v\n", body)
 					return fmt.Sprintf("Successfully created node (%v)\n", name), err
 				} else {
 					msg := fmt.Sprintf("Error: %v", err)
@@ -255,7 +254,7 @@ func (f *NvClient) GetAllFields(object_type string, command map[string][]string,
 
 	resp, _ := f.HttpClientCallback(f.username).Get(u)
 
-	f.logger.Debug.Println(fmt.Sprintf("URL: %v", u))
+	logger.Debug.Println(fmt.Sprintf("URL: %v", u))
 
 	responseStr, err := readResponseBody(resp.Body)
 	if err != nil {
