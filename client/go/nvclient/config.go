@@ -1,4 +1,4 @@
-package main
+package nvclient
 
 import (
 	"io/ioutil"
@@ -11,7 +11,6 @@ import (
 	"strings"
 
 	logger "github.com/atclate/go-logger"
-	"github.com/atclate/nventory/client/go/nvclient"
 	"github.com/kardianos/osext"
 	"github.com/spf13/cobra"
 )
@@ -80,7 +79,7 @@ func SetupCli(app *cobra.Command) {
 				if searchCommand.allFields {
 					val, err := GetAllFieldsByCommand(driver, &searchCommand)
 					if err == nil {
-						fmt.Print(nvclient.PrintResults(val))
+						fmt.Print(PrintResults(val))
 					} else {
 						logger.Error.Println("Error:", err)
 						os.Exit(1)
@@ -90,7 +89,7 @@ func SetupCli(app *cobra.Command) {
 
 				val, err := SearchByCommand(driver, &searchCommand)
 				if err == nil {
-					fmt.Print(nvclient.PrintResultsFilterByFields(val, getFieldsFromFlags(&searchCommand)))
+					fmt.Print(PrintResultsFilterByFields(val, getFieldsFromFlags(&searchCommand)))
 				} else {
 					logger.Error.Println("Error:", err)
 				}
@@ -99,7 +98,7 @@ func SetupCli(app *cobra.Command) {
 	}
 }
 
-func SearchByCommand(f *NventoryDriver, sc *SearchCommands) (nvclient.Result, error) {
+func SearchByCommand(f *NventoryDriver, sc *SearchCommands) (Result, error) {
 	flagMap := getMapFromSearchCommands(sc)
 
 	fs := getFieldsFromFlags(sc)
@@ -110,8 +109,19 @@ func SearchByCommand(f *NventoryDriver, sc *SearchCommands) (nvclient.Result, er
 	return f.Search(sc.objectType, flagMap, includes, fs)
 }
 
+func SetByCommand(f Driver, sc *SetCommands) (string, error) {
+	flagMap := getMapFromSearchCommands(sc)
+
+	fs := getSetFromFlags(sc)
+
+	includes := make(map[string][]string, 0)
+	i, _ := f.GetAllSubsystemNames(sc.objectType)
+	includes["include"] = i
+	return f.Set(sc.objectType, flagMap, includes, fs)
+}
+
 // Get all the fields of a node
-func GetAllFieldsByCommand(f *NventoryDriver, sc *SearchCommands) (nvclient.Result, error) {
+func GetAllFieldsByCommand(f *NventoryDriver, sc *SearchCommands) (Result, error) {
 	flagMap := getMapFromSearchCommands(sc)
 
 	fs := getFieldsFromFlags(sc)

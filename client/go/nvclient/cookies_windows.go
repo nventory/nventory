@@ -1,9 +1,6 @@
-package main
+package nvclient
 
-import (
-	"os"
-	"path"
-)
+import "path"
 
 func getCookieFilename() string {
 	home := "C:\\yp"

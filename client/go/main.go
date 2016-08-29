@@ -14,10 +14,13 @@
 
 package main
 
-import "github.com/atclate/nventory/client/go/cmd"
+import (
+	"github.com/atclate/nventory/client/go/cmd"
+	"github.com/atclate/nventory/client/go/nvclient"
+)
 
 func init() {
-	SetupCli(cmd.RootCmd)
+	nvclient.SetupCli(cmd.RootCmd)
 }
 
 func main() {

@@ -1,4 +1,4 @@
-package main
+package nvclient
 
 import (
 	"crypto/tls"
@@ -16,7 +16,6 @@ import (
 	"golang.org/x/net/publicsuffix"
 
 	logger "github.com/atclate/go-logger"
-	"github.com/atclate/nventory/client/go/nvclient"
 
 	"bufio"
 	"os"
@@ -48,9 +47,9 @@ func getMapFromSearchCommands(sc SearchableCommand) map[string][]string {
 	return flagMap
 }
 
-func getSetFromFlags(set []string) map[string]string {
+func getSetFromFlags(sc *SetCommands) map[string]string {
 	fs := make(map[string]string, 0)
-	for _, ss := range set {
+	for _, ss := range sc.setValueFlags.value {
 		for _, s := range strings.Split(ss, ",") {
 			splits := strings.Split(s, "=")
 			if len(splits) == 2 {
@@ -88,26 +87,26 @@ func (f *NventoryDriver) passwordCallback(username string) *http.Client {
 	return httpClient
 }
 
-func (f *NventoryDriver) Search(object_type string, conditions map[string][]string, includes map[string][]string, fields []string) (nvclient.Result, error) {
+func (f *NventoryDriver) Search(object_type string, conditions map[string][]string, includes map[string][]string, fields []string) (Result, error) {
 	logger.Debug.Println("searching in nventory for node with search subcommand ", searchCommand.destFlags.ToString())
-	nv := nvclient.NewNvClient(f.GetServer(), autoreg, f.passwordCallback, f.Input)
+	nv := NewNvClient(f.GetServer(), autoreg, f.passwordCallback, f.Input)
 	return nv.GetObjects(object_type, conditions, includes)
 }
 
 func (f *NventoryDriver) Set(object_type string, conditions map[string][]string, includes map[string][]string, set map[string]string) (string, error) {
 	logger.Debug.Println("setting in nventory for node with search subcommand ", searchCommand.destFlags.ToString())
-	nv := nvclient.NewNvClient(f.GetServer(), autoreg, f.passwordCallback, f.Input)
+	nv := NewNvClient(f.GetServer(), autoreg, f.passwordCallback, f.Input)
 	u, _ := user.Current()
 	return nv.SetObjects("nodes", conditions, includes, set, u.Username)
 }
 
 func (f *NventoryDriver) GetAllSubsystemNames(objectType string) ([]string, error) {
 	logger.Debug.Println("searching in nventory for all subsystemnames with search subcommand ", objectType)
-	nv := nvclient.NewNvClient(f.GetServer(), autoreg, f.passwordCallback, f.Input)
+	nv := NewNvClient(f.GetServer(), autoreg, f.passwordCallback, f.Input)
 	return nv.GetAllSubsystemNames(objectType)
 }
 
-func (f *NventoryDriver) GetAllFields(object_type string, command map[string][]string, includes map[string][]string, flags []string) (nvclient.Result, error) {
+func (f *NventoryDriver) GetAllFields(object_type string, command map[string][]string, includes map[string][]string, flags []string) (Result, error) {
 
 	client, err := f.GetHttpClientFor(autoreg, func(username string) string {
 		if username == autoreg {
@@ -135,7 +134,7 @@ func (f *NventoryDriver) GetAllFields(object_type string, command map[string][]s
 		log.Fatal("Unable to read response body.")
 	}
 
-	return nvclient.GetResultsFromResponse(responseStr)
+	return GetResultsFromResponse(responseStr)
 }
 
 func intersection(allSubsystemNames []string, fields []string) []string {

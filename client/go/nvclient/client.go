@@ -4,8 +4,6 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -264,18 +262,6 @@ func (f *NvClient) GetAllFields(object_type string, command map[string][]string,
 	return GetResultsFromResponse(responseStr)
 }
 
-func intersection(allSubsystemNames []string, fields []string) []string {
-	result := make([]string, 0)
-	for _, name := range allSubsystemNames {
-		for _, inc := range fields {
-			if strings.Contains(name, inc) || strings.Contains(inc, name) {
-				result = append(result, inc)
-			}
-		}
-	}
-	return result
-}
-
 func (f *NvClient) GetAllSubsystemNames(objectType string) ([]string, error) {
 	var err error
 	if len(f.subsystemNames) == 0 {
@@ -431,17 +417,6 @@ func addFieldExists(field string, filter []string) bool {
 	return false
 }
 
-func mergeMapOfStringArrays(a map[string][]string, b map[string][]string) map[string][]string {
-	result := make(map[string][]string)
-	for k, v := range a {
-		result[k] = v
-	}
-	for k, v := range b {
-		result[k] = append(result[k], v...)
-	}
-	return result
-}
-
 func mergeMapOfStrings(a map[string]string, b map[string]string) map[string]string {
 	result := make(map[string]string)
 	for k, v := range a {
@@ -451,60 +426,4 @@ func mergeMapOfStrings(a map[string]string, b map[string]string) map[string]stri
 		result[k] = v
 	}
 	return result
-}
-
-func separate(hashStrings []string, prefix string) map[string][]string {
-	hash := make(map[string][]string)
-	// name[key]=value1,map[key]=value2
-	for _, val := range hashStrings {
-		values := strings.Split(val, ",")
-		// name[key]=value
-		for _, value := range values {
-			pair := strings.Split(value, "=")
-			key := ""
-			value := ""
-			if len(pair) == 2 {
-				key = fmt.Sprintf("%v%v", prefix, search_shortcuts.Replace(pair[0]))
-				value = pair[1]
-			} else if len(pair) == 1 {
-				key = "name"
-				value = pair[0]
-			} else {
-				break
-			}
-
-			hash[key] = []string{value}
-		}
-	}
-	return hash
-}
-
-func isRedirectResponse(resp *http.Response) bool {
-	if resp == nil {
-		return false
-	}
-	return isRedirect(resp.StatusCode)
-}
-
-func isRedirect(returnCode int) bool {
-	if returnCode >= 300 && returnCode < 400 {
-		return true
-	}
-	return false
-}
-
-func getHeaderLocation(resp *http.Response) string {
-	if resp != nil && resp.Header["Location"] != nil {
-		return resp.Header["Location"][0]
-	}
-	return ""
-}
-
-func readResponseBody(body io.ReadCloser) (string, error) {
-	//defer body.Close()
-	contents, err := ioutil.ReadAll(body)
-	if err != nil {
-		return "", err
-	}
-	return string(contents), nil
 }

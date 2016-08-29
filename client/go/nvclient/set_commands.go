@@ -1,4 +1,4 @@
-package main
+package nvclient
 
 import (
 	"fmt"
@@ -18,6 +18,7 @@ type SetCommands struct {
 	destFlags     *SearchFlags
 	setValueFlags *SetValueFlags
 	searchCommand *SearchCommands
+	objectType    string
 }
 
 func (c *SetCommands) GetSearchFlags() *SearchFlags {
@@ -27,7 +28,7 @@ func (c *SetCommands) GetSearchFlags() *SearchFlags {
 func (sc *SetCommands) SetByCommand(f Driver) (string, error) {
 	flagMap := getMapFromSearchCommands(sc)
 
-	fs := getSetFromFlags(sc.setValueFlags.value)
+	fs := getSetFromFlags(sc)
 
 	includes := make(map[string][]string, 0)
 	i, _ := f.GetAllSubsystemNames(searchCommand.objectType)
