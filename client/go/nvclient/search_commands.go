@@ -1,7 +1,10 @@
 package nvclient
 
 import (
+	"log"
 	_ "strings"
+
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -31,6 +34,40 @@ type SearchCommands struct {
 
 func (c *SearchCommands) GetSearchFlags() *SearchFlags {
 	return c.destFlags
+}
+
+func (sc *SearchCommands) GetFlagMap() map[string][]string {
+	flagMap := make(map[string][]string, 0)
+	if sc.GetSearchFlags() != nil {
+		flagMap[""] = append(sc.GetSearchFlags().Get, sc.GetSearchFlags().Name...)
+		flagMap["exact_"] = sc.GetSearchFlags().Exactget
+		flagMap["regex_"] = sc.GetSearchFlags().Regexget
+		flagMap["exclude_"] = sc.GetSearchFlags().Exclude
+		flagMap["and_"] = sc.GetSearchFlags().And
+	}
+	return flagMap
+}
+
+func (sc *SearchCommands) GetFieldsArray() []string {
+	fs := make([]string, 0)
+	for _, ss := range sc.destFlags.Fields {
+		fs = append(fs, strings.Split(ss, ",")...)
+	}
+	if sc.showtags == true {
+		if sc.objectType == "nodes" {
+			fs = append(fs, "node_groups[name]")
+			fs = append(fs, "node_groups[tags][name]")
+		} else if sc.objectType == "node_groups" {
+			fs = append(fs, "tags[name]")
+		} else {
+			log.Fatalf("--showtags can only be used when searching objecttype nodes or node_groups. object type = %v\n", sc.objectType)
+		}
+	}
+	return fs
+}
+
+func (c *SearchCommands) GetObjectType() string {
+	return c.objectType
 }
 
 func (f *SearchCommands) Init(dest *SearchFlags, app *cobra.Command) {

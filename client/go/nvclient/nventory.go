@@ -35,18 +35,6 @@ func (d NventoryDriver) GetServer() string {
 	return d.Server
 }
 
-func getMapFromSearchCommands(sc SearchableCommand) map[string][]string {
-	flagMap := make(map[string][]string, 0)
-	if sc.GetSearchFlags() != nil {
-		flagMap[""] = append(sc.GetSearchFlags().get, sc.GetSearchFlags().name...)
-		flagMap["exact_"] = sc.GetSearchFlags().exactget
-		flagMap["regex_"] = sc.GetSearchFlags().regexget
-		flagMap["exclude_"] = sc.GetSearchFlags().exclude
-		flagMap["and_"] = sc.GetSearchFlags().and
-	}
-	return flagMap
-}
-
 func getSetFromFlags(sc *SetCommands) map[string]string {
 	fs := make(map[string]string, 0)
 	for _, ss := range sc.setValueFlags.value {
@@ -153,7 +141,7 @@ func getSearchUrl(hostname string, object_type string, searchCommand map[string]
 	// start organizing commands issued
 	values := url.Values{}
 	for k, v := range searchCommand {
-		values = mergeMapOfStringArrays(values, separate(v, k))
+		values = mergeMapOfStringArrays(values, Separate(v, k))
 	}
 
 	for k, v := range includes {
@@ -191,7 +179,7 @@ func mergeMapOfStringArrays(a map[string][]string, b map[string][]string) map[st
 	return result
 }
 
-func separate(hashStrings []string, prefix string) map[string][]string {
+func Separate(hashStrings []string, prefix string) map[string][]string {
 	hash := make(map[string][]string)
 	// name[key]=value1,map[key]=value2
 	for _, val := range hashStrings {

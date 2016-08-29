@@ -124,7 +124,7 @@ func GetResultsFromResponse(response string) (Result, error) {
 func AssignIfStringSliceFlagNotExists(flags *SearchFlags, index int) error {
 	if flags.IsEmpty() {
 		if len(flag.Arg(index)) > 0 {
-			flags.name = append(flags.name, flag.Arg(index))
+			flags.Name = append(flags.Name, flag.Arg(index))
 			return nil
 		}
 		return errors.New(fmt.Sprintf("Argument not found. Please specify a flag or argument number %v\n", index))
@@ -185,23 +185,6 @@ func readResponseBody(body io.ReadCloser) (string, error) {
 		return "", err
 	}
 	return string(contents), nil
-}
-func getFieldsFromFlags(sc *SearchCommands) []string {
-	fs := make([]string, 0)
-	for _, ss := range sc.destFlags.fields {
-		fs = append(fs, strings.Split(ss, ",")...)
-	}
-	if sc.showtags == true {
-		if sc.objectType == "nodes" {
-			fs = append(fs, "node_groups[name]")
-			fs = append(fs, "node_groups[tags][name]")
-		} else if sc.objectType == "node_groups" {
-			fs = append(fs, "tags[name]")
-		} else {
-			log.Fatalf("--showtags can only be used when searching objecttype nodes or node_groups. object type = %v\n", sc.objectType)
-		}
-	}
-	return fs
 }
 
 type ExprResult struct {

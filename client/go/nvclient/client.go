@@ -321,7 +321,7 @@ func (f *NvClient) getSearchUrl(object_type string, searchCommand map[string][]s
 	// start organizing commands issued
 	values := url.Values{}
 	for k, v := range searchCommand {
-		values = mergeMapOfStringArrays(values, separate(v, k))
+		values = mergeMapOfStringArrays(values, Separate(v, k))
 	}
 
 	for k, v := range includes {

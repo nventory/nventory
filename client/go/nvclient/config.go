@@ -89,7 +89,7 @@ func SetupCli(app *cobra.Command) {
 
 				val, err := SearchByCommand(driver, &searchCommand)
 				if err == nil {
-					fmt.Print(PrintResultsFilterByFields(val, getFieldsFromFlags(&searchCommand)))
+					fmt.Print(PrintResultsFilterByFields(val, searchCommand.GetFieldsArray()))
 				} else {
 					logger.Error.Println("Error:", err)
 				}
@@ -98,19 +98,19 @@ func SetupCli(app *cobra.Command) {
 	}
 }
 
-func SearchByCommand(f *NventoryDriver, sc *SearchCommands) (Result, error) {
-	flagMap := getMapFromSearchCommands(sc)
+func SearchByCommand(f *NventoryDriver, sc SearchableCommand) (Result, error) {
+	flagMap := sc.GetFlagMap()
 
-	fs := getFieldsFromFlags(sc)
+	fs := sc.GetFieldsArray()
 
 	includes := make(map[string][]string, 0)
-	i, _ := f.GetAllSubsystemNames(sc.objectType)
+	i, _ := f.GetAllSubsystemNames(sc.GetObjectType())
 	includes["include"] = intersection(i, fs)
-	return f.Search(sc.objectType, flagMap, includes, fs)
+	return f.Search(sc.GetObjectType(), flagMap, includes, fs)
 }
 
 func SetByCommand(f Driver, sc *SetCommands) (string, error) {
-	flagMap := getMapFromSearchCommands(sc)
+	flagMap := sc.GetFlagMap()
 
 	fs := getSetFromFlags(sc)
 
@@ -122,9 +122,9 @@ func SetByCommand(f Driver, sc *SetCommands) (string, error) {
 
 // Get all the fields of a node
 func GetAllFieldsByCommand(f *NventoryDriver, sc *SearchCommands) (Result, error) {
-	flagMap := getMapFromSearchCommands(sc)
+	flagMap := sc.GetFlagMap()
 
-	fs := getFieldsFromFlags(sc)
+	fs := sc.GetFieldsArray()
 
 	includes := make(map[string][]string, 0)
 	includes["include"], _ = f.GetAllSubsystemNames(sc.objectType)
@@ -134,6 +134,9 @@ func GetAllFieldsByCommand(f *NventoryDriver, sc *SearchCommands) (Result, error
 
 type SearchableCommand interface {
 	GetSearchFlags() *SearchFlags
+	GetFlagMap() map[string][]string
+	GetFieldsArray() []string
+	GetObjectType() string
 }
 
 func getVersionFromVersionFile(filename string) (string, error) {
