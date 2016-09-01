@@ -1,12 +1,11 @@
 package nvclient
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 
-	"bufio"
 	"errors"
-	"fmt"
 	"path/filepath"
 	"strings"
 
@@ -16,8 +15,6 @@ import (
 )
 
 var (
-	version = "0.0.0"
-
 	dst           SearchFlags
 	setValueFlags SetValueFlags
 
@@ -26,7 +23,7 @@ var (
 	defaultOpsdbServer = "http://opsdb"
 )
 
-func SetupCli(app *cobra.Command) {
+func SetupCli(app *cobra.Command, driver Driver) {
 
 	searchCommand.Init(&dst, app)
 	setCommand.Init(&dst, &setValueFlags, &searchCommand, app)
@@ -36,7 +33,7 @@ func SetupCli(app *cobra.Command) {
 	if err == nil {
 		ver, err := getVersionFromVersionFile(filepath.Join(filename, "VERSION"))
 		if err == nil {
-			version = ver
+			searchCommand.version = ver
 		}
 	}
 
@@ -49,13 +46,13 @@ func SetupCli(app *cobra.Command) {
 		} else {
 			logger.InitLogger(ioutil.Discard, os.Stdout, os.Stdout, os.Stderr, ioutil.Discard)
 		}
-		driver := &NventoryDriver{Server: searchCommand.server, Input: bufio.NewReader(os.Stdin)}
 
-		logger.Debug.Printf("Using %v as server\n", driver.GetServer())
+		driver.SetServer(searchCommand.server)
+		logger.Debug.Printf("Using %v as server (%v)\n", driver.GetServer(), searchCommand.server)
 
 		app.Run = func(cmd *cobra.Command, args []string) {
 			if searchCommand.showVersion {
-				fmt.Printf("%v version %v\n", filepath.Base(os.Args[0]), version)
+				fmt.Printf("%v version %v\n", filepath.Base(os.Args[0]), searchCommand.version)
 				os.Exit(0)
 			}
 
@@ -98,15 +95,13 @@ func SetupCli(app *cobra.Command) {
 	}
 }
 
-func SearchByCommand(f *NventoryDriver, sc SearchableCommand) (Result, error) {
+func SearchByCommand(f Driver, sc SearchableCommand) (Result, error) {
 	flagMap := sc.GetFlagMap()
 
 	fs := sc.GetFieldsArray()
 
-	includes := make(map[string][]string, 0)
 	i, _ := f.GetAllSubsystemNames(sc.GetObjectType())
-	includes["include"] = intersection(i, fs)
-	return f.Search(sc.GetObjectType(), flagMap, includes, fs)
+	return f.Search(sc.GetObjectType(), flagMap, intersection(i, fs), fs)
 }
 
 func SetByCommand(f Driver, sc *SetCommands) (string, error) {
@@ -114,20 +109,17 @@ func SetByCommand(f Driver, sc *SetCommands) (string, error) {
 
 	fs := getSetFromFlags(sc)
 
-	includes := make(map[string][]string, 0)
 	i, _ := f.GetAllSubsystemNames(sc.objectType)
-	includes["include"] = i
-	return f.Set(sc.objectType, flagMap, includes, fs)
+	return f.Set(sc.objectType, flagMap, i, fs)
 }
 
 // Get all the fields of a node
-func GetAllFieldsByCommand(f *NventoryDriver, sc *SearchCommands) (Result, error) {
+func GetAllFieldsByCommand(f Driver, sc *SearchCommands) (Result, error) {
 	flagMap := sc.GetFlagMap()
 
 	fs := sc.GetFieldsArray()
 
-	includes := make(map[string][]string, 0)
-	includes["include"], _ = f.GetAllSubsystemNames(sc.objectType)
+	includes, _ := f.GetAllSubsystemNames(sc.objectType)
 
 	return f.GetAllFields(sc.objectType, flagMap, includes, fs)
 }

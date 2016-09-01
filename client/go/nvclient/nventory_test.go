@@ -61,7 +61,7 @@ func TestSearchNodesInNventory(t *testing.T) {
 		// No search result positive case.
 		{
 			TSCI{
-				&SearchCommands{destFlags: &SearchFlags{Get: []string{"hardware_profile[name]=abc-doesnt-exist"}}, objectType: "nodes"},
+				&SearchCommands{searchFlags: &SearchFlags{Get: []string{"hardware_profile[name]=abc-doesnt-exist"}}, objectType: "nodes"},
 				[]string{},
 				"",
 			},
@@ -73,7 +73,7 @@ func TestSearchNodesInNventory(t *testing.T) {
 		// Lookup a host by serial number.
 		{
 			TSCI{
-				&SearchCommands{destFlags: &SearchFlags{Get: []string{"virtual_host[serial_number]=MXQ44802PL"}}, objectType: "nodes"},
+				&SearchCommands{searchFlags: &SearchFlags{Get: []string{"virtual_host[serial_number]=MXQ44802PL"}}, objectType: "nodes"},
 				[]string{},
 				"",
 			},
@@ -85,7 +85,7 @@ func TestSearchNodesInNventory(t *testing.T) {
 		// Search by os with quote
 		{
 			TSCI{
-				&SearchCommands{destFlags: &SearchFlags{Get: []string{"os=Red Hat CentOS Linux 6.6 x86_64"}}, objectType: "nodes"},
+				&SearchCommands{searchFlags: &SearchFlags{Get: []string{"os=Red Hat CentOS Linux 6.6 x86_64"}}, objectType: "nodes"},
 				[]string{},
 				"",
 			},
@@ -97,7 +97,7 @@ func TestSearchNodesInNventory(t *testing.T) {
 		// --get name=dev-email2lwes.np.wc1 --fields virtual_host[name]
 		{
 			TSCI{
-				&SearchCommands{destFlags: &SearchFlags{Name: []string{"dev-email2lwes.np.wc1"}, Fields: []string{"virtual_host[name]"}}, objectType: "nodes"},
+				&SearchCommands{searchFlags: &SearchFlags{Name: []string{"dev-email2lwes.np.wc1"}, Fields: []string{"virtual_host[name]"}}, objectType: "nodes"},
 				[]string{"virtual_host[name]"},
 				"",
 			},
@@ -109,7 +109,7 @@ func TestSearchNodesInNventory(t *testing.T) {
 		// --name opsdb3 --fields node_groups
 		{
 			TSCI{
-				&SearchCommands{destFlags: &SearchFlags{Name: []string{"opsdb3"}, Fields: []string{"node_groups"}}, objectType: "nodes"},
+				&SearchCommands{searchFlags: &SearchFlags{Name: []string{"opsdb3"}, Fields: []string{"node_groups"}}, objectType: "nodes"},
 				[]string{"node_groups"},
 				"",
 			},
@@ -121,7 +121,7 @@ func TestSearchNodesInNventory(t *testing.T) {
 		// --name npvm2.np.wc1.example.com --fields=virtual_guests[name]
 		{
 			TSCI{
-				&SearchCommands{destFlags: &SearchFlags{Name: []string{"npvm2.np.wc1.example.com"}, Fields: []string{"virtual_guests[name]"}}, objectType: "nodes"},
+				&SearchCommands{searchFlags: &SearchFlags{Name: []string{"npvm2.np.wc1.example.com"}, Fields: []string{"virtual_guests[name]"}}, objectType: "nodes"},
 				[]string{"virtual_guests[name]"},
 				"",
 			},
@@ -133,7 +133,7 @@ func TestSearchNodesInNventory(t *testing.T) {
 		// --get mac=18:a9:05:46:ba:ee --fields name
 		{
 			TSCI{
-				&SearchCommands{destFlags: &SearchFlags{Get: []string{"mac=18:a9:05:46:ba:ee"}, Fields: []string{"name"}}, objectType: "nodes"},
+				&SearchCommands{searchFlags: &SearchFlags{Get: []string{"mac=18:a9:05:46:ba:ee"}, Fields: []string{"name"}}, objectType: "nodes"},
 				[]string{"name"},
 				"",
 			},
@@ -145,7 +145,7 @@ func TestSearchNodesInNventory(t *testing.T) {
 		// --get name=prodvm --get node_groups[name]=xen
 		{
 			TSCI{
-				&SearchCommands{destFlags: &SearchFlags{Get: []string{"name=prodvm", "node_groups[name]=xen"}}, objectType: "nodes"},
+				&SearchCommands{searchFlags: &SearchFlags{Get: []string{"name=prodvm", "node_groups[name]=xen"}}, objectType: "nodes"},
 				[]string{},
 				"",
 			},
@@ -157,7 +157,7 @@ func TestSearchNodesInNventory(t *testing.T) {
 		// --name ceph --fields=name_aliases[name] --fields=name_aliases[id]
 		{
 			TSCI{
-				&SearchCommands{destFlags: &SearchFlags{Get: []string{"name=ceph"}, Fields: []string{"name_aliases[name]", "name_aliases[id]"}}, objectType: "nodes"},
+				&SearchCommands{searchFlags: &SearchFlags{Get: []string{"name=ceph"}, Fields: []string{"name_aliases[name]", "name_aliases[id]"}}, objectType: "nodes"},
 				[]string{"name_aliases[name]", "name_aliases[id]"},
 				"",
 			},

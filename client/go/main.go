@@ -15,12 +15,16 @@
 package main
 
 import (
+	"bufio"
+	"os"
+
 	"github.com/atclate/nventory/client/go/cmd"
 	"github.com/atclate/nventory/client/go/nvclient"
 )
 
 func init() {
-	nvclient.SetupCli(cmd.RootCmd)
+	driver := &nvclient.NventoryDriver{Input: bufio.NewReader(os.Stdin)}
+	nvclient.SetupCli(cmd.RootCmd, driver)
 }
 
 func main() {

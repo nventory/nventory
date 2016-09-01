@@ -18,8 +18,8 @@ import (
 )
 
 type Client interface {
-	GetObjects(objecttypes string, conditions map[string][]string, includes map[string][]string) (Result, error)
-	SetObjects(objecttypes string, conditions map[string][]string, includes map[string][]string, set map[string]string, login string) (string, error)
+	GetObjects(objecttypes string, conditions Conditions, includes []string) (Result, error)
+	SetObjects(objecttypes string, conditions Conditions, includes []string, set map[string]string, login string) (string, error)
 	GetAllSubsystemNames(objectType string) ([]string, error)
 }
 
@@ -45,16 +45,36 @@ type NvClient struct {
 	subsystemNames []string
 }
 
+type Conditions map[string][]string
+
+func NewCondition() Conditions {
+	return make(map[string][]string, 0)
+}
+
+func (c Conditions) GetTypes() []string {
+	keys := make([]string, 0, len(c))
+	for k := range c {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
+func (c Conditions) GetConditionsByType(condition_type string) []string {
+	return c[condition_type]
+}
+
+type Field string
+
 func (d *NvClient) GetServer() string {
 	return d.server
 }
 
-func (f *NvClient) GetObjects(object_type string, conditions map[string][]string, includes map[string][]string) (Result, error) {
+func (f *NvClient) GetObjects(object_type string, conditions Conditions, includes []string) (Result, error) {
 	i, err := f.GetAllSubsystemNames(object_type)
 	if err != nil {
 		return nil, err
 	}
-	includes["include"] = intersection(i, includes["include"])
+	includes = intersection(i, includes)
 
 	u := f.getSearchUrl(object_type, conditions, includes)
 	logger.Debug.Println(fmt.Sprintf("URL: %v", u))
@@ -70,7 +90,7 @@ func (f *NvClient) GetObjects(object_type string, conditions map[string][]string
 	return res, err
 }
 
-func (f *NvClient) SetObjects(object_type string, conditions map[string][]string, includes map[string][]string, set map[string]string, login string) (string, error) {
+func (f *NvClient) SetObjects(object_type string, conditions Conditions, includes []string, set map[string]string, login string) (string, error) {
 	_, err := f.GetAllSubsystemNames(object_type)
 	if err != nil {
 		return "Unable to get all subsystem names.", err
@@ -241,14 +261,12 @@ func singularize(plural string) string {
 	return plural
 }
 
-func (f *NvClient) GetAllFields(object_type string, command map[string][]string, includes map[string][]string, flags []string) (Result, error) {
+func (f *NvClient) GetAllFields(object_type string, command map[string][]string, includes []string, flags []string) (Result, error) {
 	fields, err := f.GetAllSubsystemNames(object_type)
 	if err != nil {
 		return nil, err
 	}
-	m := make(map[string][]string, 0)
-	m["include"] = fields
-	u := f.getSearchUrl(object_type, command, includes)
+	u := f.getSearchUrl(object_type, command, fields)
 
 	resp, _ := f.HttpClientCallback(f.username).Get(u)
 
@@ -317,32 +335,29 @@ func (f *NvClient) getSubsystemNamesFromResponse(response string) ([]string, err
 	return result, nil
 }
 
-func (f *NvClient) getSearchUrl(object_type string, searchCommand map[string][]string, includes map[string][]string) string {
+func (f *NvClient) getSearchUrl(object_type string, searchCommand Conditions, includes []string) string {
 	// start organizing commands issued
 	values := url.Values{}
 	for k, v := range searchCommand {
 		values = mergeMapOfStringArrays(values, Separate(v, k))
 	}
 
-	for k, v := range includes {
-		m := make(map[string][]string, 0)
-		for _, f := range v {
+	for _, f := range includes {
+		m := make([]string, 0)
 
-			var fieldsRegex = regexp.MustCompile(`([^[]+)\[.+\]`)
-			if fieldsRegex.MatchString(f) {
-				// field[subfield]
-				fieldName := fieldsRegex.FindAllStringSubmatch(f, -1)
-				val := []string{""}
-				if strings.Contains(f, "[tags]") {
-					val = append(val, "tags")
-				}
-				m[k+"["+fieldName[0][1]+"]"] = val
-			} else {
-				// field
-				m[k+"["+f+"]"] = []string{""}
+		var fieldsRegex = regexp.MustCompile(`([^[]+)\[.+\]`)
+		if fieldsRegex.MatchString(f) {
+			// field[subfield]
+			fieldName := fieldsRegex.FindAllStringSubmatch(f, -1)
+			val := []string{""}
+			if strings.Contains(f, "[tags]") {
+				val = append(val, "tags")
 			}
+			m = append(m, fmt.Sprintf("includes[%v]=%v", fieldName[0][1], val))
+		} else {
+			// field
+			m = append(m, fmt.Sprintf("includes[%v]=", f))
 		}
-		values = mergeMapOfStringArrays(values, m)
 	}
 
 	return fmt.Sprintf("%v/%v.xml?%v", f.GetServer(), object_type, values.Encode())

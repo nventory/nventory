@@ -10,7 +10,7 @@ import (
 )
 
 type SearchCommands struct {
-	destFlags      *SearchFlags
+	searchFlags    *SearchFlags
 	nodeGroupNodes bool
 	nodeGroup      bool
 
@@ -26,14 +26,32 @@ type SearchCommands struct {
 	objectType   string
 
 	withAliases   bool
-	newOpsDB      bool
 	showtags      bool
 	showQueryJson bool
 	showVersion   bool
+	version       string
 }
 
-func (c *SearchCommands) GetSearchFlags() *SearchFlags {
-	return c.destFlags
+func (c *SearchCommands) GetSearchFlags() *SearchFlags { return c.searchFlags }
+func (c *SearchCommands) IsNodeGroupNodes() bool       { return c.nodeGroupNodes }
+func (c *SearchCommands) IsNodeGroup() bool            { return c.nodeGroup }
+func (c *SearchCommands) IsDebug() bool                { return c.debug }
+func (c *SearchCommands) IsDryRun() bool               { return c.dryRun }
+func (c *SearchCommands) IsYes() bool                  { return c.yes }
+func (c *SearchCommands) IsRegister() bool             { return c.register }
+func (c *SearchCommands) IsNoSwitchport() bool         { return c.noSwitchport }
+func (c *SearchCommands) IsNoStorage() bool            { return c.noStorage }
+func (c *SearchCommands) IsAllFields() bool            { return c.allFields }
+func (c *SearchCommands) GetUsername() string          { return c.username }
+func (c *SearchCommands) GetServer() string            { return c.server }
+func (c *SearchCommands) IsWithAliases() bool          { return c.withAliases }
+func (c *SearchCommands) IsShowTags() bool             { return c.showtags}
+func (c *SearchCommands) IsShowQueryJson() bool        { return c.showQueryJson}
+func (c *SearchCommands) IsShowVersion() bool          { return c.showVersion}
+func (c *SearchCommands) GetVersion() string           { return c.version}
+
+func NewSearchCommand(sf *SearchFlags) *SearchCommands {
+	return &SearchCommands{searchFlags: sf}
 }
 
 func (sc *SearchCommands) GetFlagMap() map[string][]string {
@@ -50,7 +68,7 @@ func (sc *SearchCommands) GetFlagMap() map[string][]string {
 
 func (sc *SearchCommands) GetFieldsArray() []string {
 	fs := make([]string, 0)
-	for _, ss := range sc.destFlags.Fields {
+	for _, ss := range sc.searchFlags.Fields {
 		fs = append(fs, strings.Split(ss, ",")...)
 	}
 	if sc.showtags == true {
@@ -71,7 +89,7 @@ func (c *SearchCommands) GetObjectType() string {
 }
 
 func (f *SearchCommands) Init(dest *SearchFlags, app *cobra.Command) {
-	f.destFlags = dest
+	f.searchFlags = dest
 	dest.Init(app)
 
 	app.PersistentFlags().BoolVar(&f.debug, "debug", false, "debug output")
@@ -92,6 +110,7 @@ func (f *SearchCommands) Init(dest *SearchFlags, app *cobra.Command) {
 	//app.PersistentFlags().MarkHidden("showQueryJson")
 	app.Flags().BoolVar(&f.allFields, "allfields", false, "Display all fields for selected objects. One or more fields may be specified to be excluded from the query, seperate multiple fields with commas.")
 	app.PersistentFlags().BoolVar(&f.showVersion, "version", false, "print the version")
+	f.version = "0.0.0"
 
 	app.Flags().BoolVar(&f.nodeGroupNodes, "get_nodegroup_nodes", false, "Display all the members of the given node group including virtuals")
 	// Aliases: []string{"ngn", "getnodegroupnodes"},

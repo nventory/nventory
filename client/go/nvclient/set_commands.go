@@ -15,6 +15,10 @@ func (f *SetValueFlags) ToString() string {
 	return fmt.Sprintf("set=(%v)", f.value)
 }
 
+func (f *SetValueFlags) GetValues() []string {
+	return f.value
+}
+
 type SetCommands struct {
 	destFlags     *SearchFlags
 	setValueFlags *SetValueFlags
@@ -24,6 +28,18 @@ type SetCommands struct {
 
 func (c *SetCommands) GetSearchFlags() *SearchFlags {
 	return c.destFlags
+}
+
+func (c *SetCommands) GetSetValueFlags() *SetValueFlags {
+	return c.setValueFlags
+}
+
+func (c *SetCommands) GetSearchCommands() *SearchCommands {
+	return c.searchCommand
+}
+
+func (c *SetCommands) GetObjectType() string {
+	return c.objectType
 }
 
 func (sc *SetCommands) GetFlagMap() map[string][]string {
@@ -46,19 +62,13 @@ func (sc *SetCommands) GetFieldsArray() []string {
 	return fs
 }
 
-func (c *SetCommands) GetObjectType() string {
-	return c.objectType
-}
-
 func (sc *SetCommands) SetByCommand(f Driver) (string, error) {
 	flagMap := sc.GetFlagMap()
 
 	fs := getSetFromFlags(sc)
 
-	includes := make(map[string][]string, 0)
 	i, _ := f.GetAllSubsystemNames(searchCommand.objectType)
-	includes["include"] = i
-	return f.Set(searchCommand.objectType, flagMap, includes, fs)
+	return f.Set(searchCommand.objectType, flagMap, i, fs)
 }
 
 func (f *SetCommands) Init(dest *SearchFlags, set *SetValueFlags, searchCommand *SearchCommands, app *cobra.Command) {

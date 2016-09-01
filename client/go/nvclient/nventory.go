@@ -31,7 +31,11 @@ type NventoryDriver struct {
 	httpClientMap map[string]*http.Client
 }
 
-func (d NventoryDriver) GetServer() string {
+func (d *NventoryDriver) SetServer(s string) {
+	d.Server = s
+}
+
+func (d *NventoryDriver) GetServer() string {
 	return d.Server
 }
 
@@ -75,14 +79,14 @@ func (f *NventoryDriver) passwordCallback(username string) *http.Client {
 	return httpClient
 }
 
-func (f *NventoryDriver) Search(object_type string, conditions map[string][]string, includes map[string][]string, fields []string) (Result, error) {
-	logger.Debug.Println("searching in nventory for node with search subcommand ", searchCommand.destFlags.ToString())
+func (f *NventoryDriver) Search(object_type string, conditions map[string][]string, includes []string, fields []string) (Result, error) {
+	logger.Debug.Println("searching in nventory for node with search subcommand ", searchCommand.GetSearchFlags().ToString())
 	nv := NewNvClient(f.GetServer(), autoreg, f.passwordCallback, f.Input)
 	return nv.GetObjects(object_type, conditions, includes)
 }
 
-func (f *NventoryDriver) Set(object_type string, conditions map[string][]string, includes map[string][]string, set map[string]string) (string, error) {
-	logger.Debug.Println("setting in nventory for node with search subcommand ", searchCommand.destFlags.ToString())
+func (f *NventoryDriver) Set(object_type string, conditions map[string][]string, includes []string, set map[string]string) (string, error) {
+	logger.Debug.Println("setting in nventory for node with search subcommand ", searchCommand.GetSearchFlags().ToString())
 	nv := NewNvClient(f.GetServer(), autoreg, f.passwordCallback, f.Input)
 	u, _ := user.Current()
 	return nv.SetObjects("nodes", conditions, includes, set, u.Username)
@@ -94,7 +98,7 @@ func (f *NventoryDriver) GetAllSubsystemNames(objectType string) ([]string, erro
 	return nv.GetAllSubsystemNames(objectType)
 }
 
-func (f *NventoryDriver) GetAllFields(object_type string, command map[string][]string, includes map[string][]string, flags []string) (Result, error) {
+func (f *NventoryDriver) GetAllFields(object_type string, command map[string][]string, includes []string, flags []string) (Result, error) {
 
 	client, err := f.GetHttpClientFor(autoreg, func(username string) string {
 		if username == autoreg {
@@ -109,9 +113,7 @@ func (f *NventoryDriver) GetAllFields(object_type string, command map[string][]s
 	if err != nil {
 		return nil, err
 	}
-	m := make(map[string][]string, 0)
-	m["include"] = fields
-	u := getSearchUrl(f.GetServer(), object_type, command, includes)
+	u := getSearchUrl(f.GetServer(), object_type, command, fields)
 
 	resp, _ := client.Get(u)
 
@@ -137,32 +139,28 @@ func intersection(allSubsystemNames []string, fields []string) []string {
 	return result
 }
 
-func getSearchUrl(hostname string, object_type string, searchCommand map[string][]string, includes map[string][]string) string {
+func getSearchUrl(hostname string, object_type string, searchCommand map[string][]string, includes []string) string {
 	// start organizing commands issued
 	values := url.Values{}
 	for k, v := range searchCommand {
 		values = mergeMapOfStringArrays(values, Separate(v, k))
 	}
 
-	for k, v := range includes {
-		m := make(map[string][]string, 0)
-		for _, f := range v {
-
-			var fieldsRegex = regexp.MustCompile(`([^[]+)\[.+\]`)
-			if fieldsRegex.MatchString(f) {
-				// field[subfield]
-				fieldName := fieldsRegex.FindAllStringSubmatch(f, -1)
-				val := []string{""}
-				if strings.Contains(f, "[tags]") {
-					val = append(val, "tags")
-				}
-				m[k+"["+fieldName[0][1]+"]"] = val
-			} else {
-				// field
-				m[k+"["+f+"]"] = []string{""}
+	for _, f := range includes {
+		values := make([]string, 0)
+		var fieldsRegex = regexp.MustCompile(`([^[]+)\[.+\]`)
+		if fieldsRegex.MatchString(f) {
+			// field[subfield]
+			fieldName := fieldsRegex.FindAllStringSubmatch(f, -1)
+			val := []string{""}
+			if strings.Contains(f, "[tags]") {
+				val = append(val, "tags")
 			}
+			values = append(values, fmt.Sprintf("includes[%v]=%v", fieldName[0][1], val))
+		} else {
+			// field
+			values = append(values, fmt.Sprintf("includes[%v]=", f))
 		}
-		values = mergeMapOfStringArrays(values, m)
 	}
 
 	return fmt.Sprintf("%v/%v.xml?%v", hostname, object_type, values.Encode())
