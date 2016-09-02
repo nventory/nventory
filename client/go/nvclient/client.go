@@ -74,7 +74,7 @@ func (f *NvClient) GetObjects(object_type string, conditions Conditions, include
 	if err != nil {
 		return nil, err
 	}
-	includes = intersection(i, includes)
+	includes = Intersection(i, includes)
 
 	u := f.getSearchUrl(object_type, conditions, includes)
 	logger.Debug.Println(fmt.Sprintf("URL: %v", u))

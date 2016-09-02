@@ -39,7 +39,7 @@ func (d *NventoryDriver) GetServer() string {
 	return d.Server
 }
 
-func getSetFromFlags(sc *SetCommands) map[string]string {
+func (sc *SetCommands) GetSetFromFlags() map[string]string {
 	fs := make(map[string]string, 0)
 	for _, ss := range sc.setValueFlags.value {
 		for _, s := range strings.Split(ss, ",") {
@@ -80,13 +80,13 @@ func (f *NventoryDriver) passwordCallback(username string) *http.Client {
 }
 
 func (f *NventoryDriver) Search(object_type string, conditions map[string][]string, includes []string, fields []string) (Result, error) {
-	logger.Debug.Println("searching in nventory for node with search subcommand ", searchCommand.GetSearchFlags().ToString())
+	logger.Debug.Println("searching %v in nventory for %v", object_type, fields)
 	nv := NewNvClient(f.GetServer(), autoreg, f.passwordCallback, f.Input)
 	return nv.GetObjects(object_type, conditions, includes)
 }
 
 func (f *NventoryDriver) Set(object_type string, conditions map[string][]string, includes []string, set map[string]string) (string, error) {
-	logger.Debug.Println("setting in nventory for node with search subcommand ", searchCommand.GetSearchFlags().ToString())
+	logger.Debug.Println("setting %v in nventory to %v", object_type, set)
 	nv := NewNvClient(f.GetServer(), autoreg, f.passwordCallback, f.Input)
 	u, _ := user.Current()
 	return nv.SetObjects("nodes", conditions, includes, set, u.Username)
@@ -127,7 +127,7 @@ func (f *NventoryDriver) GetAllFields(object_type string, command map[string][]s
 	return GetResultsFromResponse(responseStr)
 }
 
-func intersection(allSubsystemNames []string, fields []string) []string {
+func Intersection(allSubsystemNames []string, fields []string) []string {
 	result := make([]string, 0)
 	for _, name := range allSubsystemNames {
 		for _, inc := range fields {

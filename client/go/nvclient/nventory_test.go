@@ -214,7 +214,7 @@ func TestSetNodesInNventory(t *testing.T) {
 		// --name ceph5.np.ev1.example.com --set avail_space=107520
 		{
 			TSCI2{
-				&SetCommands{destFlags: &SearchFlags{Name: []string{"ceph5.np.ev1.example.com"}}, objectType: "nodes", setValueFlags: &SetValueFlags{[]string{"avail_space=16348828"}}},
+				&SetCommands{searchCommand: &SearchCommands{searchFlags: &SearchFlags{Name: []string{"ceph5.np.ev1.example.com"}}, objectType: "nodes"}, setValueFlags: &SetValueFlags{[]string{"avail_space=16348828"}}},
 				[]string{},
 				"y\n",
 			},

@@ -22,9 +22,17 @@ import (
 	"github.com/atclate/nventory/client/go/nvclient"
 )
 
+var (
+	searchCommand      *nvclient.SearchCommands
+	setCommand         *nvclient.SetCommands
+)
+
 func init() {
 	driver := &nvclient.NventoryDriver{Input: bufio.NewReader(os.Stdin)}
-	nvclient.SetupCli(cmd.RootCmd, driver)
+	searchCommand = nvclient.NewSearchCommand(&nvclient.SearchFlags{}, driver)
+	searchCommand.InitializeCommand(cmd.RootCmd)
+	setCommand = nvclient.NewSetCommand(cmd.RootCmd, searchCommand, driver);
+	SetupCli(cmd.RootCmd, driver)
 }
 
 func main() {

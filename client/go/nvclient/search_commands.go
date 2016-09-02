@@ -4,10 +4,22 @@ import (
 	"log"
 	_ "strings"
 
+	"errors"
 	"strings"
+	"io/ioutil"
 
 	"github.com/spf13/cobra"
+	"github.com/kardianos/osext"
+	"path/filepath"
 )
+
+
+var defaultOpsdbServer = "http://opsdb"
+
+/******************************************************************************
+SetCommands:
+	Stores all commands and flags related to searching a value.
+ *****************************************************************************/
 
 type SearchCommands struct {
 	searchFlags    *SearchFlags
@@ -27,9 +39,10 @@ type SearchCommands struct {
 
 	withAliases   bool
 	showtags      bool
-	showQueryJson bool
 	showVersion   bool
 	version       string
+
+	driver Driver
 }
 
 func (c *SearchCommands) GetSearchFlags() *SearchFlags { return c.searchFlags }
@@ -46,12 +59,12 @@ func (c *SearchCommands) GetUsername() string          { return c.username }
 func (c *SearchCommands) GetServer() string            { return c.server }
 func (c *SearchCommands) IsWithAliases() bool          { return c.withAliases }
 func (c *SearchCommands) IsShowTags() bool             { return c.showtags}
-func (c *SearchCommands) IsShowQueryJson() bool        { return c.showQueryJson}
 func (c *SearchCommands) IsShowVersion() bool          { return c.showVersion}
 func (c *SearchCommands) GetVersion() string           { return c.version}
 
-func NewSearchCommand(sf *SearchFlags) *SearchCommands {
-	return &SearchCommands{searchFlags: sf}
+func NewSearchCommand(searchFlags *SearchFlags, driver Driver) *SearchCommands {
+	sc := &SearchCommands{searchFlags: searchFlags, driver: driver}
+	return sc
 }
 
 func (sc *SearchCommands) GetFlagMap() map[string][]string {
@@ -88,9 +101,16 @@ func (c *SearchCommands) GetObjectType() string {
 	return c.objectType
 }
 
-func (f *SearchCommands) Init(dest *SearchFlags, app *cobra.Command) {
-	f.searchFlags = dest
-	dest.Init(app)
+func (c *SearchCommands) GetDriver() Driver {
+	return c.driver
+}
+
+func (c *SearchCommands) SetDriver(d Driver) {
+	c.driver = d
+}
+
+func (f *SearchCommands) InitializeCommand(app *cobra.Command) {
+	f.searchFlags.Init(app)
 
 	app.PersistentFlags().BoolVar(&f.debug, "debug", false, "debug output")
 	app.PersistentFlags().BoolVar(&f.dryRun, "dry-run", false, "Test run without modifying opsdb")
@@ -106,8 +126,6 @@ func (f *SearchCommands) Init(dest *SearchFlags, app *cobra.Command) {
 	app.PersistentFlags().StringVar(&f.objectType, "objecttype", "nodes", "Object type of search.")
 	app.PersistentFlags().BoolVar(&f.withAliases, "withaliases", false, "When searching by name, search aliases as well. (doesn't work with exactget nor regexget)")
 	app.PersistentFlags().BoolVar(&f.showtags, "showtags", false, "Lists all tags the node(s) belongs to")
-	app.PersistentFlags().BoolVar(&f.showQueryJson, "showQueryJson", false, "Display json used to query newapi. (--newapi automatically changed to true)")
-	//app.PersistentFlags().MarkHidden("showQueryJson")
 	app.Flags().BoolVar(&f.allFields, "allfields", false, "Display all fields for selected objects. One or more fields may be specified to be excluded from the query, seperate multiple fields with commas.")
 	app.PersistentFlags().BoolVar(&f.showVersion, "version", false, "print the version")
 	f.version = "0.0.0"
@@ -118,4 +136,30 @@ func (f *SearchCommands) Init(dest *SearchFlags, app *cobra.Command) {
 	// Aliases: []string{"ng"},
 	app.Flags().BoolVar(&f.nodeGroupNodes, "nodegroupexpanded", false, "Display all the members of the given node group including virtuals")
 	// Aliases: []string{"nge"},
+
+	// Get version from VERSION file.
+	filename, err := osext.ExecutableFolder()
+	if err == nil {
+		ver, err := getVersionFromVersionFile(filepath.Join(filename, "VERSION"))
+		if err == nil {
+			f.version = ver
+		}
+	}
+}
+
+
+func getVersionFromVersionFile(filename string) (string, error) {
+	b, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return "", err
+	} else {
+		rep := strings.TrimSpace(string(b))
+		split := strings.Split(rep, " ")
+		if len(split) > 1 {
+			return split[1], nil
+		} else if len(split[0]) > 0 {
+			return split[0], nil
+		}
+		return "", errors.New("No version found.")
+	}
 }

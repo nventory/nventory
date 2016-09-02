@@ -7,27 +7,30 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type SetValueFlags struct {
-	value []string
-}
-
-func (f *SetValueFlags) ToString() string {
-	return fmt.Sprintf("set=(%v)", f.value)
-}
-
-func (f *SetValueFlags) GetValues() []string {
-	return f.value
-}
+/******************************************************************************
+SetCommands:
+	Stores all commands and flags related to searching and setting a value.
+ *****************************************************************************/
 
 type SetCommands struct {
-	destFlags     *SearchFlags
-	setValueFlags *SetValueFlags
-	searchCommand *SearchCommands
-	objectType    string
+	setValueFlags *SetValueFlags // cli flag (--set) for setting a value
+	searchCommand *SearchCommands // misc cli flags related to searching
+
+	driver Driver
+}
+
+func NewSetCommand(cmd *cobra.Command, sc *SearchCommands, driver Driver) *SetCommands {
+	set := &SetCommands{
+		setValueFlags: &SetValueFlags{}, // cli flag (--set) for setting a value
+		searchCommand: sc, // misc cli flags related to searching
+		driver: driver,
+	}
+	set.Init(cmd)
+	return set
 }
 
 func (c *SetCommands) GetSearchFlags() *SearchFlags {
-	return c.destFlags
+	return c.searchCommand.GetSearchFlags()
 }
 
 func (c *SetCommands) GetSetValueFlags() *SetValueFlags {
@@ -39,7 +42,7 @@ func (c *SetCommands) GetSearchCommands() *SearchCommands {
 }
 
 func (c *SetCommands) GetObjectType() string {
-	return c.objectType
+	return c.searchCommand.GetObjectType()
 }
 
 func (sc *SetCommands) GetFlagMap() map[string][]string {
@@ -56,7 +59,7 @@ func (sc *SetCommands) GetFlagMap() map[string][]string {
 
 func (sc *SetCommands) GetFieldsArray() []string {
 	fs := make([]string, 0)
-	for _, ss := range sc.destFlags.Fields {
+	for _, ss := range sc.GetSearchFlags().Fields {
 		fs = append(fs, strings.Split(ss, ",")...)
 	}
 	return fs
@@ -65,16 +68,34 @@ func (sc *SetCommands) GetFieldsArray() []string {
 func (sc *SetCommands) SetByCommand(f Driver) (string, error) {
 	flagMap := sc.GetFlagMap()
 
-	fs := getSetFromFlags(sc)
+	fs := sc.GetSetFromFlags()
 
-	i, _ := f.GetAllSubsystemNames(searchCommand.objectType)
-	return f.Set(searchCommand.objectType, flagMap, i, fs)
+	i, _ := f.GetAllSubsystemNames(sc.GetObjectType())
+	return f.Set(sc.GetObjectType(), flagMap, i, fs)
 }
 
-func (f *SetCommands) Init(dest *SearchFlags, set *SetValueFlags, searchCommand *SearchCommands, app *cobra.Command) {
-	f.destFlags = dest
-	f.setValueFlags = set
-	f.searchCommand = searchCommand
-
+func (f *SetCommands) Init(app *cobra.Command) {
 	app.Flags().StringSliceVar(&f.setValueFlags.value, "set", nil, "Update fields in objects selected via get/exactget, may be specified multiple times to update multiple fields.")
+}
+
+
+
+
+
+/******************************************************************************
+SetValueFlags:
+	Stores '=' separated key value pairs the user specified.
+Example:
+	value: []string{"name=new.name", "physical_memory=1024"}
+ *****************************************************************************/
+type SetValueFlags struct {
+	value []string
+}
+
+func (f *SetValueFlags) ToString() string {
+	return fmt.Sprintf("set=(%v)", f.value)
+}
+
+func (f *SetValueFlags) GetValues() []string {
+	return f.value
 }

@@ -221,3 +221,40 @@ func getHeaderLocation(resp *http.Response) string {
 	}
 	return ""
 }
+
+
+func SearchByCommand(f Driver, sc SearchableCommand) (Result, error) {
+	flagMap := sc.GetFlagMap()
+
+	fs := sc.GetFieldsArray()
+
+	i, _ := f.GetAllSubsystemNames(sc.GetObjectType())
+	return f.Search(sc.GetObjectType(), flagMap, Intersection(i, fs), fs)
+}
+
+func SetByCommand(f Driver, sc *SetCommands) (string, error) {
+	flagMap := sc.GetFlagMap()
+
+	fs := sc.GetSetFromFlags()
+
+	i, _ := f.GetAllSubsystemNames(sc.GetObjectType())
+	return f.Set(sc.GetObjectType(), flagMap, i, fs)
+}
+
+// Get all the fields of a node
+func GetAllFieldsByCommand(f Driver, sc *SearchCommands) (Result, error) {
+	flagMap := sc.GetFlagMap()
+
+	fs := sc.GetFieldsArray()
+
+	includes, _ := f.GetAllSubsystemNames(sc.GetObjectType())
+
+	return f.GetAllFields(sc.GetObjectType(), flagMap, includes, fs)
+}
+
+type SearchableCommand interface {
+	GetSearchFlags() *SearchFlags
+	GetFlagMap() map[string][]string
+	GetFieldsArray() []string
+	GetObjectType() string
+}
