@@ -1,3 +1,17 @@
+// Copyright © 2016 Andrew Cheung <ac1493@yp.com>
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package nvclient
 
 import (
@@ -17,9 +31,12 @@ import (
 	logger "github.com/atclate/go-logger"
 )
 
+/******************************************************
+ * Client - interface for nventory client.
+ *****************************************************/
 type Client interface {
 	GetObjects(objecttypes string, conditions Conditions, includes []string) (Result, error)
-	SetObjects(objecttypes string, conditions Conditions, includes []string, set map[string]string, login string) (string, error)
+	SetObjects(objecttypes string, conditions Conditions, includes []string, set map[string]string, login string, yes bool) (string, error)
 	GetAllSubsystemNames(objectType string) ([]string, error)
 }
 
@@ -40,16 +57,10 @@ type NvClient struct {
 
 	Input *bufio.Reader
 
-	redirflag      bool
-	numRedirects   int
 	subsystemNames []string
 }
 
 type Conditions map[string][]string
-
-func NewCondition() Conditions {
-	return make(map[string][]string, 0)
-}
 
 func (c Conditions) GetTypes() []string {
 	keys := make([]string, 0, len(c))
@@ -90,7 +101,7 @@ func (f *NvClient) GetObjects(object_type string, conditions Conditions, include
 	return res, err
 }
 
-func (f *NvClient) SetObjects(object_type string, conditions Conditions, includes []string, set map[string]string, login string) (string, error) {
+func (f *NvClient) SetObjects(object_type string, conditions Conditions, includes []string, set map[string]string, login string, noPrompt bool) (string, error) {
 	_, err := f.GetAllSubsystemNames(object_type)
 	if err != nil {
 		return "Unable to get all subsystem names.", err
@@ -113,7 +124,7 @@ func (f *NvClient) SetObjects(object_type string, conditions Conditions, include
 	switch t := res.(type) {
 	case *ResultArray:
 		if len(t.Array) > 0 {
-			con := PromptUserConfirmation(fmt.Sprintf("This will update %v entry, continue?  [y/N]: ", len(t.Array)), f.Input)
+			con := noPrompt || PromptUserConfirmation(fmt.Sprintf("This will update %v entry, continue?  [y/N]: ", len(t.Array)), f.Input)
 			if con {
 				for _, item := range t.Array {
 					switch t2 := item.(type) {
@@ -194,7 +205,7 @@ func (f *NvClient) SetObjects(object_type string, conditions Conditions, include
 		name = set["name"]
 	}
 
-	con := PromptUserConfirmation(fmt.Sprintf("This will create new entry (%v), continue?  [y/N]: ", name), f.Input)
+	con := noPrompt || PromptUserConfirmation(fmt.Sprintf("This will create new entry (%v), continue?  [y/N]: ", name), f.Input)
 	if con {
 		logger.Debug.Printf("Set: %v", set)
 		values := url.Values{}
