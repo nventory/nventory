@@ -14,7 +14,14 @@
 
 package nvclient
 
-import "strings"
+import (
+	"strings"
+	"github.com/lestrrat/go-libxml2"
+	"github.com/lestrrat/go-libxml2/clib"
+	"github.com/lestrrat/go-libxml2/types"
+	"github.com/atclate/go-logger"
+	"os"
+)
 
 /*******
  * Result classes for parsing xml and json
@@ -156,6 +163,79 @@ func Compare(r1, r2 Result) bool {
 		}
 	}
 	return false
+}
+
+func GetResultsFromResponse(response string) (Result, error) {
+
+	d, err := libxml2.ParseString(response)
+	if err != nil {
+		logger.Error.Fatal("Unable to parse response as xml:\n%v", response)
+		os.Exit(1)
+	}
+
+	root, err := d.DocumentElement()
+	if err != nil {
+		return nil, err
+	}
+
+	result, err := getResultFromDom(root)
+	return result, err
+}
+
+func getResultFromDom(node types.Node) (Result, error) {
+	rootChildren, err := node.ChildNodes()
+
+	if err != nil {
+		return nil, err
+	}
+
+	var isArray bool
+	var isNil bool
+	e, ok := node.(types.Element)
+	if ok {
+		attr, err := e.GetAttribute("type")
+		isArray = (err == nil) && (attr.Value() == "array")
+
+		attr, err = e.GetAttribute("nil")
+		isNil = (err == nil) && (attr.Value() == "true")
+	}
+	if isNil {
+		if isArray {
+			return nil, nil
+		}
+		return &ResultValue{Name: node.NodeName(), Value: ""}, nil
+	}
+
+	if isArray {
+		// Convert this node to array node
+		arr := &ResultArray{Array: make([]Result, 0), Name: node.NodeName()}
+		for _, n := range rootChildren {
+			switch n.NodeType() {
+			case clib.ElementNode:
+				arrChild, _ := getResultFromDom(n)
+				arr.Array = append(arr.Array, arrChild)
+			}
+		}
+		return arr, nil
+	}
+
+	result := &ResultMap{Name: node.NodeName()}
+	// Looping through each element in search (e.g. <node>)
+	for _, n := range rootChildren {
+		switch n.NodeType() {
+		case clib.ElementNode:
+			// traverse down to parse.
+			r, _ := getResultFromDom(n)
+			result.Add(n.NodeName(), r)
+		case clib.TextNode:
+			// ignore
+			if len(rootChildren) == 1 {
+				return &ResultValue{Value: n.NodeValue()}, nil
+			}
+		default:
+		}
+	}
+	return result, nil
 }
 
 func PrintResultsFilterByFields(r Result, fields []string) string {

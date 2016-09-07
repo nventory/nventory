@@ -21,16 +21,12 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"strings"
 
 	"flag"
 
 	"github.com/howeyc/gopass"
-	"github.com/lestrrat/go-libxml2"
-	"github.com/lestrrat/go-libxml2/clib"
-	"github.com/lestrrat/go-libxml2/types"
 )
 
 func PromptUserConfirmation(message string, f *bufio.Reader) bool {
@@ -58,78 +54,6 @@ func readLine(f *bufio.Reader) (string, error) {
 		line = append(line, l...)
 	}
 	return string(line), err
-}
-
-func GetResultsFromResponse(response string) (Result, error) {
-
-	d, err := libxml2.ParseString(response)
-	if err != nil {
-		log.Fatal("Unable to parse response as xml:\n%v", response)
-	}
-
-	root, err := d.DocumentElement()
-	if err != nil {
-		return nil, err
-	}
-
-	result, err := getResultFromDom(root)
-	return result, err
-}
-
-func getResultFromDom(node types.Node) (Result, error) {
-	rootChildren, err := node.ChildNodes()
-
-	if err != nil {
-		return nil, err
-	}
-
-	var isArray bool
-	var isNil bool
-	e, ok := node.(types.Element)
-	if ok {
-		attr, err := e.GetAttribute("type")
-		isArray = (err == nil) && (attr.Value() == "array")
-
-		attr, err = e.GetAttribute("nil")
-		isNil = (err == nil) && (attr.Value() == "true")
-	}
-	if isNil {
-		if isArray {
-			return nil, nil
-		}
-		return &ResultValue{Name: node.NodeName(), Value: ""}, nil
-	}
-
-	if isArray {
-		// Convert this node to array node
-		arr := &ResultArray{Array: make([]Result, 0), Name: node.NodeName()}
-		for _, n := range rootChildren {
-			switch n.NodeType() {
-			case clib.ElementNode:
-				arrChild, _ := getResultFromDom(n)
-				arr.Array = append(arr.Array, arrChild)
-			}
-		}
-		return arr, nil
-	}
-
-	result := &ResultMap{Name: node.NodeName()}
-	// Looping through each element in search (e.g. <node>)
-	for _, n := range rootChildren {
-		switch n.NodeType() {
-		case clib.ElementNode:
-			// traverse down to parse.
-			r, _ := getResultFromDom(n)
-			result.Add(n.NodeName(), r)
-		case clib.TextNode:
-			// ignore
-			if len(rootChildren) == 1 {
-				return &ResultValue{Value: n.NodeValue()}, nil
-			}
-		default:
-		}
-	}
-	return result, nil
 }
 
 func AssignIfStringSliceFlagNotExists(flags *SearchFlags, index int) error {
