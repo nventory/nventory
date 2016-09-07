@@ -149,14 +149,14 @@ func (f *NvClient) SetObjects(object_type string, conditions Conditions, include
 
 							req, err := http.NewRequest("PUT", u, nil)
 							if err != nil {
-								fmt.Println("Error creating PUT request for url: " + u)
+								logger.Error.Println("Error creating PUT request for url: " + u)
 							} else {
 								logger.Debug.Printf("PUT Request: %v", req)
 								isRedirect := true
 								err = nil
 								client := f.HttpClientCallback(login)
 								for isRedirect && err == nil {
-									fmt.Printf("%v url: %V\n", req.Method, req.URL)
+									logger.Debug.Printf("%v url: %V\n", req.Method, req.URL)
 									req, _ = http.NewRequest(req.Method, req.URL.String(), nil)
 									resp, err = client.Do(req)
 									isRedirect = isRedirectResponse(resp)
@@ -170,14 +170,14 @@ func (f *NvClient) SetObjects(object_type string, conditions Conditions, include
 								}
 
 								if err != nil {
-									fmt.Printf("Error requesting PUT request for url: %v\nError: %v\n", u, err)
+									logger.Error.Printf("Error requesting PUT request for url: %v\nError: %v\n", u, err)
 								} else {
 									body, err := readResponseBody(resp.Body)
 									if err == nil {
 										logger.Debug.Printf("Success Response Body:\n%v\n", body)
 										numSuccess++
 									} else {
-										fmt.Printf("Error: %v", err)
+										logger.Error.Printf("Error: %v", err)
 									}
 								}
 							}
@@ -223,7 +223,7 @@ func (f *NvClient) SetObjects(object_type string, conditions Conditions, include
 
 		req, err := http.NewRequest("POST", u, nil)
 		if err != nil {
-			fmt.Println("Error creating POST request for url: " + u)
+			logger.Error.Println("Error creating POST request for url: " + u)
 		} else {
 			logger.Debug.Printf("POST Request: %v", req)
 			isRedirect := true
@@ -243,7 +243,7 @@ func (f *NvClient) SetObjects(object_type string, conditions Conditions, include
 			}
 
 			if err != nil {
-				fmt.Printf("Error requesting PUT request for url: %v\nError: %v\n", u, err)
+				logger.Error.Printf("Error requesting PUT request for url: %v\nError: %v\n", u, err)
 			} else {
 				body, err := readResponseBody(resp.Body)
 				if err == nil {

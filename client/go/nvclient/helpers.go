@@ -60,7 +60,23 @@ func readLine(f *bufio.Reader) (string, error) {
 	return string(line), err
 }
 
-func GetResultFromDom(node types.Node) (Result, error) {
+func GetResultsFromResponse(response string) (Result, error) {
+
+	d, err := libxml2.ParseString(response)
+	if err != nil {
+		log.Fatal("Unable to parse response as xml:\n%v", response)
+	}
+
+	root, err := d.DocumentElement()
+	if err != nil {
+		return nil, err
+	}
+
+	result, err := getResultFromDom(root)
+	return result, err
+}
+
+func getResultFromDom(node types.Node) (Result, error) {
 	rootChildren, err := node.ChildNodes()
 
 	if err != nil {
@@ -72,13 +88,10 @@ func GetResultFromDom(node types.Node) (Result, error) {
 	e, ok := node.(types.Element)
 	if ok {
 		attr, err := e.GetAttribute("type")
-		if err == nil && attr.Value() == "array" {
-			isArray = true
-		}
+		isArray = (err == nil) && (attr.Value() == "array")
+
 		attr, err = e.GetAttribute("nil")
-		if err == nil && attr.Value() == "true" {
-			isNil = true
-		}
+		isNil = (err == nil) && (attr.Value() == "true")
 	}
 	if isNil {
 		if isArray {
@@ -93,7 +106,7 @@ func GetResultFromDom(node types.Node) (Result, error) {
 		for _, n := range rootChildren {
 			switch n.NodeType() {
 			case clib.ElementNode:
-				arrChild, _ := GetResultFromDom(n)
+				arrChild, _ := getResultFromDom(n)
 				arr.Array = append(arr.Array, arrChild)
 			}
 		}
@@ -106,7 +119,7 @@ func GetResultFromDom(node types.Node) (Result, error) {
 		switch n.NodeType() {
 		case clib.ElementNode:
 			// traverse down to parse.
-			r, _ := GetResultFromDom(n)
+			r, _ := getResultFromDom(n)
 			result.Add(n.NodeName(), r)
 		case clib.TextNode:
 			// ignore
@@ -119,22 +132,6 @@ func GetResultFromDom(node types.Node) (Result, error) {
 	return result, nil
 }
 
-func GetResultsFromResponse(response string) (Result, error) {
-
-	d, err := libxml2.ParseString(response)
-	if err != nil {
-		log.Fatal("Unable to parse response as xml:\n%v", response)
-	}
-
-	root, err := d.DocumentElement()
-	if err != nil {
-		return nil, err
-	}
-
-	result, err := GetResultFromDom(root)
-	return result, err
-}
-
 func AssignIfStringSliceFlagNotExists(flags *SearchFlags, index int) error {
 	if flags.IsEmpty() {
 		if len(flag.Arg(index)) > 0 {
@@ -145,23 +142,6 @@ func AssignIfStringSliceFlagNotExists(flags *SearchFlags, index int) error {
 
 	}
 	return nil
-}
-
-func PromptUserConfirmaion(message string, f *bufio.Reader) bool {
-	fmt.Print(message)
-	response, err := readLine(f)
-	if err != nil {
-		return false
-	}
-	r := []rune(response)
-	if len(r) > 0 {
-		if r[0] == 'y' || r[0] == 'Y' {
-			return true
-		} else {
-			return false
-		}
-	}
-	return PromptUserConfirmaion(message, f)
 }
 
 func PromptUserLogin(user string, f *bufio.Reader) (u, p string, err error) {

@@ -221,7 +221,7 @@ func TestSearchNodesInNventory(t *testing.T) {
 }
 
 func TestSetNodesInNventory(t *testing.T) {
-	logger.InitLogger(ioutil.Discard, os.Stdout, os.Stdout, ioutil.Discard, ioutil.Discard)
+	logger.InitLogger(ioutil.Discard, ioutil.Discard, ioutil.Discard, ioutil.Discard, ioutil.Discard)
 	driver := NventoryDriver{Server: "http://opsdb.wc1.example.com", Input: bufio.NewReader(os.Stdin)}
 
 	tcs := []TSC2{
