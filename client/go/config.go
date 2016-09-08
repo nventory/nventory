@@ -41,7 +41,7 @@ func SetupCli(app *cobra.Command, driver nvclient.Driver) {
 		} else {
 			logger.InitLogger(ioutil.Discard, os.Stdout, os.Stdout, os.Stderr, ioutil.Discard)
 		}
-
+		
 		driver.SetServer(searchCommand.GetServer())
 		logger.Debug.Printf("Using %v as server (%v)\n", driver.GetServer(), searchCommand.GetServer())
 

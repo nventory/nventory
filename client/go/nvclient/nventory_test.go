@@ -61,7 +61,7 @@ type TSCI2 struct {
 
 func TestCookies(t *testing.T) {
 	logger.InitLogger(ioutil.Discard, os.Stdout, os.Stdout, ioutil.Discard, ioutil.Discard)
-	driver := &NventoryDriver{Server: "http://opsdb.wc1.example.com", Input: bufio.NewReader(os.Stdin)}
+	driver := &NventoryDriver{server: "http://opsdb.wc1.example.com", input: bufio.NewReader(os.Stdin)}
 	httpClient, err := driver.GetHttpClientFor(autoreg, func(username string) string { return autoreg_password })
 	assert.Nil(t, err, "Should have no error")
 	assert.NotNil(t, httpClient, "http.Client hould not be nil")
@@ -69,7 +69,7 @@ func TestCookies(t *testing.T) {
 
 func TestSearchNodesInNventory(t *testing.T) {
 	logger.InitLogger(ioutil.Discard, os.Stdout, os.Stdout, ioutil.Discard, ioutil.Discard)
-	driver := NventoryDriver{Server: "http://opsdb.wc1.example.com", Input: bufio.NewReader(os.Stdin)}
+	driver := NventoryDriver{server: "http://opsdb.wc1.example.com", input: bufio.NewReader(os.Stdin)}
 
 	tcs := []TSC{
 		// No search result positive case.
@@ -192,7 +192,7 @@ func TestSearchNodesInNventory(t *testing.T) {
 	}
 
 	tp := NewTestServer()
-	driver.Server = tp.URL
+	driver.server = tp.URL
 
 	initResponses()
 
@@ -222,7 +222,7 @@ func TestSearchNodesInNventory(t *testing.T) {
 
 func TestSetNodesInNventory(t *testing.T) {
 	logger.InitLogger(ioutil.Discard, ioutil.Discard, ioutil.Discard, ioutil.Discard, ioutil.Discard)
-	driver := NventoryDriver{Server: "http://opsdb.wc1.example.com", Input: bufio.NewReader(os.Stdin)}
+	driver := NventoryDriver{server: "http://opsdb.wc1.example.com", input: bufio.NewReader(os.Stdin)}
 
 	tcs := []TSC2{
 		// --name ceph5.np.ev1.example.com --set avail_space=107520
@@ -249,7 +249,7 @@ func TestSetNodesInNventory(t *testing.T) {
 	}
 
 	tp := NewTestServer()
-	driver.Server = tp.URL
+	driver.server = tp.URL
 
 	initResponses()
 
@@ -262,7 +262,7 @@ func TestSetNodesInNventory(t *testing.T) {
 			r.Write([]byte(resp.response))
 			responses[resp.key] = r
 		}
-		driver.Input = bufio.NewReader(strings.NewReader(tc.input.userInput))
+		driver.input = bufio.NewReader(strings.NewReader(tc.input.userInput))
 
 		act, _ := SetByCommand(&driver, tc.input.searchCommand)
 

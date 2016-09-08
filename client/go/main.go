@@ -28,7 +28,7 @@ var (
 )
 
 func init() {
-	driver := &nvclient.NventoryDriver{Input: bufio.NewReader(os.Stdin)}
+	driver := nvclient.NewNventoryDriver(bufio.NewReader(os.Stdin))
 	searchCommand = nvclient.NewSearchCommand(&nvclient.SearchFlags{}, driver)
 	searchCommand.InitializeCommand(cmd.RootCmd)
 	setCommand = nvclient.NewSetCommand(cmd.RootCmd, searchCommand, driver);

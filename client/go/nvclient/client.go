@@ -40,22 +40,21 @@ type Client interface {
 	GetAllSubsystemNames(objectType string) ([]string, error)
 }
 
-func NewNvClient(host string, login string, httpClientCallback func(username string) *http.Client, input *bufio.Reader) Client {
-	client := &NvClient{
-		server:             host,
+func NewNventoryClient(login string, input *bufio.Reader) *NventoryClient {
+	client := &NventoryClient{
 		username:           login,
-		HttpClientCallback: httpClientCallback,
+		Input:              input,
+		HttpClient:         NewHttpClient(),
 	}
-	client.Input = input
 	return client
 }
 
-type NvClient struct {
-	username           string
-	server             string
-	HttpClientCallback func(username string) *http.Client
+type NventoryClient struct {
+	username       string
+	server         string
+	HttpClient     *HttpClient
 
-	Input *bufio.Reader
+	Input          *bufio.Reader
 
 	subsystemNames []string
 }
@@ -76,11 +75,16 @@ func (c Conditions) GetConditionsByType(condition_type string) []string {
 
 type Field string
 
-func (d *NvClient) GetServer() string {
+func (d *NventoryClient) GetServer() string {
 	return d.server
 }
 
-func (f *NvClient) GetObjects(object_type string, conditions Conditions, includes []string) (Result, error) {
+func (c *NventoryClient) SetServer(server string) {
+	c.server = server
+	c.HttpClient.SetServer(server)
+}
+
+func (f *NventoryClient) GetObjects(object_type string, conditions Conditions, includes []string) (Result, error) {
 	i, err := f.GetAllSubsystemNames(object_type)
 	if err != nil {
 		return nil, err
@@ -90,7 +94,7 @@ func (f *NvClient) GetObjects(object_type string, conditions Conditions, include
 	u := f.getSearchUrl(object_type, conditions, includes)
 	logger.Debug.Println(fmt.Sprintf("URL: %v", u))
 
-	resp, _ := f.HttpClientCallback(f.username).Get(u)
+	resp, _ := f.HttpClient.For(f.username).Get(u)
 
 	responseStr, err := readResponseBody(resp.Body)
 	if err != nil {
@@ -101,7 +105,7 @@ func (f *NvClient) GetObjects(object_type string, conditions Conditions, include
 	return res, err
 }
 
-func (f *NvClient) SetObjects(object_type string, conditions Conditions, includes []string, set map[string]string, login string, noPrompt bool) (string, error) {
+func (f *NventoryClient) SetObjects(object_type string, conditions Conditions, includes []string, set map[string]string, login string, noPrompt bool) (string, error) {
 	_, err := f.GetAllSubsystemNames(object_type)
 	if err != nil {
 		return "Unable to get all subsystem names.", err
@@ -110,7 +114,7 @@ func (f *NvClient) SetObjects(object_type string, conditions Conditions, include
 	u := f.getSearchUrl(object_type, conditions, includes)
 	logger.Debug.Println(fmt.Sprintf("Search URL: %v", u))
 
-	resp, _ := f.HttpClientCallback(f.username).Get(u)
+	resp, _ := f.HttpClient.For(f.username).Get(u)
 
 	responseStr, err := readResponseBody(resp.Body)
 	if err != nil {
@@ -154,7 +158,7 @@ func (f *NvClient) SetObjects(object_type string, conditions Conditions, include
 								logger.Debug.Printf("PUT Request: %v", req)
 								isRedirect := true
 								err = nil
-								client := f.HttpClientCallback(login)
+								client := f.HttpClient.For(login)
 								for isRedirect && err == nil {
 									logger.Debug.Printf("%v url: %V\n", req.Method, req.URL)
 									req, _ = http.NewRequest(req.Method, req.URL.String(), nil)
@@ -230,7 +234,7 @@ func (f *NvClient) SetObjects(object_type string, conditions Conditions, include
 			err = nil
 			for isRedirect && err == nil {
 				req, _ = http.NewRequest(req.Method, req.URL.String(), nil)
-				resp, err = f.HttpClientCallback(login).Do(req)
+				resp, err = f.HttpClient.For(login).Do(req)
 				logger.Debug.Printf("Response from %v:\n%v\n", req.URL.String(), resp)
 				isRedirect = isRedirectResponse(resp)
 				if isRedirect {
@@ -272,14 +276,14 @@ func singularize(plural string) string {
 	return plural
 }
 
-func (f *NvClient) GetAllFields(object_type string, command map[string][]string, includes []string, flags []string) (Result, error) {
+func (f *NventoryClient) GetAllFields(object_type string, command map[string][]string, includes []string, flags []string) (Result, error) {
 	fields, err := f.GetAllSubsystemNames(object_type)
 	if err != nil {
 		return nil, err
 	}
 	u := f.getSearchUrl(object_type, command, fields)
 
-	resp, _ := f.HttpClientCallback(f.username).Get(u)
+	resp, _ := f.HttpClient.For(f.username).Get(u)
 
 	logger.Debug.Println(fmt.Sprintf("URL: %v", u))
 
@@ -291,14 +295,14 @@ func (f *NvClient) GetAllFields(object_type string, command map[string][]string,
 	return GetResultsFromResponse(responseStr)
 }
 
-func (f *NvClient) GetAllSubsystemNames(objectType string) ([]string, error) {
+func (f *NventoryClient) GetAllSubsystemNames(objectType string) ([]string, error) {
 	var err error
 	if len(f.subsystemNames) == 0 {
 		// query http://opsdb.wc1.example.com/nodes/field_names.xml
 		u := fmt.Sprintf("%v/%v/field_names.xml", f.GetServer(), objectType)
 
 		// store search_shortcuts
-		resp, err := f.HttpClientCallback(f.username).Get(u)
+		resp, err := f.HttpClient.For(f.username).Get(u)
 		if err != nil {
 			return f.subsystemNames, err
 		}
@@ -312,7 +316,7 @@ func (f *NvClient) GetAllSubsystemNames(objectType string) ([]string, error) {
 	return f.subsystemNames, err
 }
 
-func (f *NvClient) getSubsystemNamesFromResponse(response string) ([]string, error) {
+func (f *NventoryClient) getSubsystemNamesFromResponse(response string) ([]string, error) {
 	ResetShortcuts()
 
 	d, err := libxml2.ParseString(response)
@@ -346,7 +350,7 @@ func (f *NvClient) getSubsystemNamesFromResponse(response string) ([]string, err
 	return result, nil
 }
 
-func (f *NvClient) getSearchUrl(object_type string, searchCommand Conditions, includes []string) string {
+func (f *NventoryClient) getSearchUrl(object_type string, searchCommand Conditions, includes []string) string {
 	// start organizing commands issued
 	values := url.Values{}
 	for k, v := range searchCommand {
@@ -374,15 +378,15 @@ func (f *NvClient) getSearchUrl(object_type string, searchCommand Conditions, in
 	return fmt.Sprintf("%v/%v.xml?%v", f.GetServer(), object_type, values.Encode())
 }
 
-func (f *NvClient) getSetUrl(object_type string, id string, query string) string {
+func (f *NventoryClient) getSetUrl(object_type string, id string, query string) string {
 	return fmt.Sprintf("%v/%v/%v.xml?%v", f.GetServer(), object_type, id, query)
 }
 
-func (f *NvClient) getCreateUrl(object_type string, query string) string {
+func (f *NventoryClient) getCreateUrl(object_type string, query string) string {
 	return fmt.Sprintf("%v/%v.xml?%v", f.GetServer(), object_type, query)
 }
 
-func (f *NvClient) getFieldValue(response string) (Result, error) {
+func (f *NventoryClient) getFieldValue(response string) (Result, error) {
 	return GetResultsFromResponse(response)
 }
 

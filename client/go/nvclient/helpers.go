@@ -69,13 +69,17 @@ func AssignIfStringSliceFlagNotExists(flags *SearchFlags, index int) error {
 }
 
 func PromptUserLogin(user string, f *bufio.Reader) (u, p string, err error) {
-	if user != "" && user == autoreg {
+	if user != "" {
 		print("Login: ")
-		response, err := readLine(f)
-		if err != nil {
-			return "", "", errors.New("Failed reading user input.")
+		if user == autoreg {
+			response, err := readLine(f)
+			if err != nil {
+				return "", "", errors.New("Failed reading user input.")
+			}
+			user = response
+		} else {
+			println(user)
 		}
-		user = response
 	}
 	// User typed something in for username
 	print("Password: ")
