@@ -210,7 +210,7 @@ func (c *HttpClient) newHttpClientFor(username string, passwordCallback func(use
 				v.Set("login", username)
 				v.Set("password", passwd)
 				httpClient.CheckRedirect = RedirectFunc
-				resp, err = httpClient.Post(urlStr, "application/x-www-form-urlencoded", strings.NewReader(v.Encode()))
+				resp, err = httpClient.PostForm(urlStr, v)
 				cookiesList = append(cookiesList, resp.Cookies()...)
 				if err != nil {
 					logger.Error.Printf("Error when posting to %v: %v\n", urlStr, err)
@@ -331,24 +331,29 @@ func saveCookie(cookies []*http.Cookie, domain, filename string) {
 			logger.Error.Printf("Error creating cookie file (%v): %v\n", filename, err)
 		}
 	} else {
-		// File already exists. Just overwrite.
+		// File already exists.
+		// Read all cookies from file
+		existing_cookies, err := loadCookiesFromFile(filename)
+		// Save non-existing cookies
 		f, err := os.OpenFile(filename, os.O_APPEND|os.O_WRONLY, 0600)
 		defer f.Close()
 		if err == nil {
 			for _, c := range cookies {
-				if c.Path == "" {
-					c.Path = "/"
-				}
-				if c.Domain == "" {
-					c.Domain = domain
-				}
-				cJson, err := serializeJSON(c)
-				if err == nil {
-					logger.Debug.Printf("writing cookie json: %v", cJson)
-					// Save to file
-					res, err := f.WriteString(cJson + "\n")
-					if err != nil {
-						logger.Error.Printf("Error writing to cookie file (%v) [%v]: %v\n", filename, res, err)
+				if !existing_cookies.cookieExists(c) {
+					if c.Path == "" {
+						c.Path = "/"
+					}
+					if c.Domain == "" {
+						c.Domain = domain
+					}
+					cJson, err := serializeJSON(c)
+					if err == nil {
+						logger.Debug.Printf("writing cookie json: %v", cJson)
+						// Save to file
+						res, err := f.WriteString(cJson + "\n")
+						if err != nil {
+							logger.Error.Printf("Error writing to cookie file (%v) [%v]: %v\n", filename, res, err)
+						}
 					}
 				}
 			}
@@ -358,10 +363,20 @@ func saveCookie(cookies []*http.Cookie, domain, filename string) {
 	}
 }
 
-func loadCookiesIntoClient(username string, client *http.Client) {
+type CookieList []*http.Cookie
+
+func (cl CookieList) cookieExists(c *http.Cookie) bool {
+	for _, cookie := range cl {
+		if cookie.Raw == c.Raw {
+			return true
+		}
+	}
+	return false
+}
+
+func loadCookiesFromFile(filename string) (CookieList, error) {
 	cookies := make([]*http.Cookie, 0)
 
-	filename := getCookieFilename(username)
 	// TODO: Check if previous cookie is already there
 	_, err := os.Stat(filename)
 	if err == nil {
@@ -381,8 +396,16 @@ func loadCookiesIntoClient(username string, client *http.Client) {
 				}
 				line, _ = readLine(reader)
 			}
+			return cookies, err
 		}
 	}
+	return nil, err
+}
+
+func loadCookiesIntoClient(username string, client *http.Client) {
+	filename := getCookieFilename(username)
+
+	cookies, err := loadCookiesFromFile(filename)
 
 	// check cookies, load if exists
 	if err == nil && len(cookies) > 0 {
