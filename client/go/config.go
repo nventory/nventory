@@ -24,6 +24,7 @@ import (
 	logger "github.com/atclate/go-logger"
 	"github.com/spf13/cobra"
 	"github.com/atclate/nventory/client/go/nvclient"
+	"net/url"
 )
 
 /******************************************************************************
@@ -41,8 +42,25 @@ func SetupCli(app *cobra.Command, driver nvclient.Driver) {
 		} else {
 			logger.InitLogger(ioutil.Discard, os.Stdout, os.Stdout, os.Stderr, ioutil.Discard)
 		}
-		
-		driver.SetServer(searchCommand.GetServer())
+
+
+		host := searchCommand.GetServer()
+		u, err := url.Parse(host)
+
+		if err != nil {
+			logger.Error.Printf("Error parsing host: %v\n", err)
+			os.Exit(1)
+		}
+		if u.Host == "" {
+			u.Host = host
+		}
+		if u.Scheme == "" {
+			u.Scheme = "http"
+		}
+		u.Path = ""
+		host = u.String()
+
+		driver.SetServer(host)
 		logger.Debug.Printf("Using %v as server (%v)\n", driver.GetServer(), searchCommand.GetServer())
 
 		app.Run = func(cmd *cobra.Command, args []string) {

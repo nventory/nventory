@@ -87,7 +87,7 @@ func (f *NventoryDriver) GetAllSubsystemNames(objectType string) ([]string, erro
 
 func (f *NventoryDriver) GetAllFields(object_type string, command map[string][]string, includes []string, flags []string) (Result, error) {
 
-	client := f.nventoryClient.HttpClient.For(autoreg)
+	client := f.nventoryClient.GetHttpClientFor(autoreg)
 
 	fields, err := f.GetAllSubsystemNames(object_type)
 	if err != nil {

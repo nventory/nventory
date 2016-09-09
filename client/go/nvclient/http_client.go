@@ -42,107 +42,38 @@ func passwordCallback(username string) string {
 	}
 }
 
-func (f *HttpClient) For(username string) *http.Client {
-	if f.httpClientMap == nil {
-		f.httpClientMap = make(map[string]*http.Client, 0)
-	}
+func (c *HttpClient) newHttpClientFor(username string, passwordCallback func(username string) string) (*http.Client, error) {
 
-	httpClient := f.httpClientMap[username]
-	// Check if client is already initialized.
-	if httpClient == nil {
-		h, err := f.GetHttpClientFor(username)
-		if err != nil {
-			logger.Error.Printf("Unable to initialize HTTP Client")
-			os.Exit(1)
-		}
-		f.httpClientMap[username] = h
-		return h
-	}
-	return httpClient
-}
+	// Create new blank http client
+	httpClient := createBlankHttpClient()
+	// load cookies for user
+	loadCookiesIntoClient(username, httpClient)
 
-func (c *HttpClient) GetHttpClientFor(login string) (*http.Client, error) {
-	// Load from cookie file
-	cookie_file := getCookieFilename(login)
-
-	var httpClient *http.Client
-	cookies, err := loadCookies(cookie_file)
-	if err == nil && len(cookies) > 0 {
-		logger.Debug.Printf("Loading %v cookie(s) from file (%v)", len(cookies), cookie_file)
-		httpClient = createBlankHttpClient()
-		cookiesMap := make(map[url.URL][]*http.Cookie, 0)
-		for _, c := range cookies {
-			u := url.URL{
-				Scheme: "http",
-				Host:   c.Domain,
-			}
-			cookieList := cookiesMap[u]
-			if cookieList == nil {
-				cookieList = make([]*http.Cookie, 0)
-			}
-			cookieList = append(cookieList, c)
-			cookiesMap[u] = cookieList
-		}
-		for k, c := range cookiesMap {
-			logger.Debug.Printf("cookie host: %v\n", k.Host)
-			httpClient.Jar.SetCookies(&k, c)
-		}
-		resp, err := checkLoggedIn(c.GetServer(), httpClient)
-		if !isRedirectResponse(resp) {
-			return httpClient, err
-		}
-		//return nil, errors.New("Cookie not logged in.")
-	}
-	httpClient, err = c.createHttpClientFor(c.GetServer(), login, passwordCallback(login), httpClient)
-	if err != nil {
-		// Failed creating new http client.
-		logger.Error.Printf("Failed creating http client. Error: %v", err)
-		os.Exit(1)
-	}
-
-	return httpClient, err
-}
-
-func (c *HttpClient) createHttpClientFor(host, login, password string, httpClient *http.Client) (*http.Client, error) {
-	if httpClient == nil {
-		httpClient = createBlankHttpClient()
-	}
 	cookiesList := make([]*http.Cookie, 0)
 
 	redirflag := false
-	username := login
-	passwd := password
 
 	httpClient.CheckRedirect = NoRedirectFunc
 
-	resp, err := checkLoggedIn(host, httpClient)
+	// check if we're able to log in
+	resp, err := c.isLoggedIn(c.GetServer(), httpClient)
+	host := c.GetServer()
+
 	responseCode := resp.StatusCode
 
 	if isRedirect(responseCode) {
+		// Not SSO redirect.
 		urlStr := getHeaderLocation(resp)
 		var isSSO = regexp.MustCompile(`^https:\/\/sso.*`)
 		var isAuthorized = regexp.MustCompile(`^(http|https):\/\/(sso.*)\/session\/tokens`)
 		if username != autoreg {
-			// Follow all redirects for nginx cause POST doesn't
-			for isRedirectResponse(resp) && !isSSO.MatchString(getHeaderLocation(resp)) {
-				logger.Debug.Printf("Posting to: %v\n", urlStr)
-				resp, err = httpClient.Post(urlStr, "application/x-www-form-urlencoded", strings.NewReader(url.Values{"foo": []string{"bar"}}.Encode()))
-				cookiesList = append(cookiesList, resp.Cookies()...)
-				u, err := url.Parse(urlStr)
-				if err == nil {
-					c.SetServer(u.Host)
-				}
-			}
 			cookieLocation := urlStr
 			if location := getHeaderLocation(resp); isRedirectResponse(resp) && isSSO.MatchString(location) {
 				logger.Debug.Printf("POST to %v/accounts.xml was redirected, authenticating to SSO\n", host)
 				redirflag = true
 				numRedirects := 1
 
-				logger.Debug.Printf("Login: %v\n", username)
-				if passwd == "" {
-					username, passwd, err = PromptUserLogin(username, bufio.NewReader(os.Stdin))
-				}
+				passwd := passwordCallback(username)
 
 				// is sso
 				// TODO: if no password exists, use password callback (what is passed in)
@@ -273,6 +204,7 @@ func (c *HttpClient) createHttpClientFor(host, login, password string, httpClien
 				urlObj.Scheme = "https"
 				urlStr = urlObj.String()
 				logger.Debug.Println(fmt.Sprintf("Authenticating to %v", urlStr))
+				passwd := autoreg_password
 
 				v := url.Values{}
 				v.Set("login", username)
@@ -298,6 +230,7 @@ func (c *HttpClient) createHttpClientFor(host, login, password string, httpClien
 	httpClient.CheckRedirect = RedirectFunc
 
 	return httpClient, nil
+
 }
 
 func createBlankHttpClient() *http.Client {
@@ -317,22 +250,40 @@ func createBlankHttpClient() *http.Client {
 	return client
 }
 
-func checkLoggedIn(host string, httpClient *http.Client) (*http.Response, error) {
+func (c *HttpClient) isLoggedIn(host string, httpClient *http.Client) (*http.Response, error) {
 	redirFunc := httpClient.CheckRedirect
 	httpClient.CheckRedirect = NoRedirectFunc
 
-	cookiesList := make([]*http.Cookie, 0)
 	vFoo := url.Values{}
 	vFoo.Set("foo", "bar")
+
+	// post to host/accounts.xml and inspect the response.
+	// if it redirects to sso location, client is not authenticated.
+	// if it responds without redirect, assume it is authenticated.
 	urlStr := fmt.Sprintf("%v/accounts.xml", host)
 	logger.Debug.Printf("posting to (%v)", urlStr)
 	resp, err := httpClient.Post(urlStr, "application/x-www-form-urlencoded", strings.NewReader(vFoo.Encode()))
 	if err == nil {
-		cookiesList = append(cookiesList, resp.Cookies()...)
 		respStr, err := readResponseBody(resp.Body)
 		if err == nil {
 			if isRedirectResponse(resp) {
 				logger.Debug.Printf("response %v redirected to %v", urlStr, getHeaderLocation(resp))
+				var isSSO = regexp.MustCompile(`^https:\/\/sso.*`)
+				// Follow all redirects for nginx cause POST doesn't
+				for isRedirectResponse(resp) && !isSSO.MatchString(getHeaderLocation(resp)) {
+					u, err := url.Parse(getHeaderLocation(resp))
+					if err == nil {
+						c.SetServer(fmt.Sprintf("%v://%v", u.Scheme, u.Host))
+					}
+					if u.Scheme == "" {
+						u.Scheme = "http"
+					}
+					c.SetServer(fmt.Sprintf("%v://%v", u.Scheme, u.Host))
+					urlStr = u.String()
+
+					logger.Debug.Printf("Posting to: %v\n", urlStr)
+					resp, err = httpClient.Post(urlStr, "application/x-www-form-urlencoded", strings.NewReader(url.Values{"foo": []string{"bar"}}.Encode()))
+				}
 			} else {
 				logger.Debug.Printf("response from %v:\n%v", urlStr, respStr)
 				httpClient.CheckRedirect = redirFunc
@@ -407,15 +358,15 @@ func saveCookie(cookies []*http.Cookie, domain, filename string) {
 	}
 }
 
-func loadCookies(filename string) (c []*http.Cookie, err error) {
-	res := make([]*http.Cookie, 0)
+func loadCookiesIntoClient(username string, client *http.Client) {
+	cookies := make([]*http.Cookie, 0)
 
+	filename := getCookieFilename(username)
 	// TODO: Check if previous cookie is already there
-	_, err = os.Stat(filename)
+	_, err := os.Stat(filename)
 	if err == nil {
 		// cookie file found
 		//Read cookie
-
 		f, err := os.Open(filename)
 		if err == nil {
 			defer f.Close()
@@ -426,13 +377,34 @@ func loadCookies(filename string) (c []*http.Cookie, err error) {
 				err = deserializeJSONCookie(string(line), cookie)
 				if err == nil {
 					logger.Debug.Printf("Cookie Found at %v: %v=%v", filename, cookie.Name, cookie.Value)
-					res = append(res, cookie)
+					cookies = append(cookies, cookie)
 				}
 				line, _ = readLine(reader)
 			}
 		}
 	}
-	return res, err
+
+	// check cookies, load if exists
+	if err == nil && len(cookies) > 0 {
+		logger.Debug.Printf("Loading %v cookie(s) from file (%v)", len(cookies), filename)
+		cookiesMap := make(map[url.URL][]*http.Cookie, 0)
+		for _, c := range cookies {
+			u := url.URL{
+				Scheme: "http",
+				Host:   c.Domain,
+			}
+			cookieList := cookiesMap[u]
+			if cookieList == nil {
+				cookieList = make([]*http.Cookie, 0)
+			}
+			cookieList = append(cookieList, c)
+			cookiesMap[u] = cookieList
+		}
+		for k, c := range cookiesMap {
+			logger.Debug.Printf("cookie host: %v\n", k.Host)
+			client.Jar.SetCookies(&k, c)
+		}
+	}
 }
 
 func NoRedirectFunc(req *http.Request, via []*http.Request) error {

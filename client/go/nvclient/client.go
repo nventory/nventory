@@ -21,6 +21,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"regexp"
 	"strings"
 
@@ -84,6 +85,26 @@ func (c *NventoryClient) SetServer(server string) {
 	c.HttpClient.SetServer(server)
 }
 
+func (f *NventoryClient) GetHttpClientFor(username string) *http.Client {
+	if f.HttpClient.httpClientMap == nil {
+		f.HttpClient.httpClientMap = make(map[string]*http.Client, 0)
+	}
+
+	httpClient := f.HttpClient.httpClientMap[username]
+	// Check if client is already initialized.
+	if httpClient == nil {
+		h, err := f.HttpClient.newHttpClientFor(username, passwordCallback)
+		if err != nil {
+			logger.Error.Printf("Unable to initialize HTTP Client")
+			os.Exit(1)
+		}
+		f.HttpClient.httpClientMap[username] = h
+		return h
+	}
+	f.SetServer(f.HttpClient.GetServer())
+	return httpClient
+}
+
 func (f *NventoryClient) GetObjects(object_type string, conditions Conditions, includes []string) (Result, error) {
 	i, err := f.GetAllSubsystemNames(object_type)
 	if err != nil {
@@ -94,7 +115,7 @@ func (f *NventoryClient) GetObjects(object_type string, conditions Conditions, i
 	u := f.getSearchUrl(object_type, conditions, includes)
 	logger.Debug.Println(fmt.Sprintf("URL: %v", u))
 
-	resp, _ := f.HttpClient.For(f.username).Get(u)
+	resp, _ := f.GetHttpClientFor(f.username).Get(u)
 
 	responseStr, err := readResponseBody(resp.Body)
 	if err != nil {
@@ -114,7 +135,7 @@ func (f *NventoryClient) SetObjects(object_type string, conditions Conditions, i
 	u := f.getSearchUrl(object_type, conditions, includes)
 	logger.Debug.Println(fmt.Sprintf("Search URL: %v", u))
 
-	resp, _ := f.HttpClient.For(f.username).Get(u)
+	resp, _ := f.GetHttpClientFor(f.username).Get(u)
 
 	responseStr, err := readResponseBody(resp.Body)
 	if err != nil {
@@ -158,7 +179,7 @@ func (f *NventoryClient) SetObjects(object_type string, conditions Conditions, i
 								logger.Debug.Printf("PUT Request: %v", req)
 								isRedirect := true
 								err = nil
-								client := f.HttpClient.For(login)
+								client := f.GetHttpClientFor(login)
 								for isRedirect && err == nil {
 									logger.Debug.Printf("%v url: %V\n", req.Method, req.URL)
 									req, _ = http.NewRequest(req.Method, req.URL.String(), nil)
@@ -234,7 +255,7 @@ func (f *NventoryClient) SetObjects(object_type string, conditions Conditions, i
 			err = nil
 			for isRedirect && err == nil {
 				req, _ = http.NewRequest(req.Method, req.URL.String(), nil)
-				resp, err = f.HttpClient.For(login).Do(req)
+				resp, err = f.GetHttpClientFor(login).Do(req)
 				logger.Debug.Printf("Response from %v:\n%v\n", req.URL.String(), resp)
 				isRedirect = isRedirectResponse(resp)
 				if isRedirect {
@@ -283,7 +304,8 @@ func (f *NventoryClient) GetAllFields(object_type string, command map[string][]s
 	}
 	u := f.getSearchUrl(object_type, command, fields)
 
-	resp, _ := f.HttpClient.For(f.username).Get(u)
+	resp, _ := f.GetHttpClientFor(f.username).Get(u)
+	f.SetServer(f.HttpClient.GetServer())
 
 	logger.Debug.Println(fmt.Sprintf("URL: %v", u))
 
@@ -302,7 +324,7 @@ func (f *NventoryClient) GetAllSubsystemNames(objectType string) ([]string, erro
 		u := fmt.Sprintf("%v/%v/field_names.xml", f.GetServer(), objectType)
 
 		// store search_shortcuts
-		resp, err := f.HttpClient.For(f.username).Get(u)
+		resp, err := f.GetHttpClientFor(f.username).Get(u)
 		if err != nil {
 			return f.subsystemNames, err
 		}
