@@ -57,6 +57,9 @@ func (c *HttpClient) newHttpClientFor(username string, passwordCallback func(use
 
 	// check if we're able to log in
 	resp, err := c.isLoggedIn(c.GetServer(), httpClient)
+	if err != nil {
+		return nil, err
+	}
 	host := c.GetServer()
 
 	responseCode := resp.StatusCode

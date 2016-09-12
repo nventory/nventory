@@ -60,16 +60,23 @@ type TSCI2 struct {
 }
 
 func TestCookies(t *testing.T) {
-	logger.InitLogger(ioutil.Discard, os.Stdout, os.Stdout, ioutil.Discard, ioutil.Discard)
-	driver := &NventoryDriver{server: "http://opsdb.wc1.example.com", input: bufio.NewReader(os.Stdin)}
-	httpClient, err := driver.GetHttpClientFor(autoreg, func(username string) string { return autoreg_password })
-	assert.Nil(t, err, "Should have no error")
+	logger.InitLogger(ioutil.Discard, os.Stdout, os.Stdout, os.Stderr, ioutil.Discard)
+
+
+	initResponses()
+	tp := NewTestServer()
+
+	driver := NewNventoryDriver(bufio.NewReader(os.Stdin))
+	driver.SetServer(tp.URL)
+	//driver.SetServer("http://opsdb")
+	httpClient := driver.nventoryClient.GetHttpClientFor(autoreg)
 	assert.NotNil(t, httpClient, "http.Client hould not be nil")
 }
 
 func TestSearchNodesInNventory(t *testing.T) {
-	logger.InitLogger(ioutil.Discard, os.Stdout, os.Stdout, ioutil.Discard, ioutil.Discard)
-	driver := NventoryDriver{server: "http://opsdb.wc1.example.com", input: bufio.NewReader(os.Stdin)}
+	logger.InitLogger(ioutil.Discard, os.Stdout, os.Stdout, os.Stderr, ioutil.Discard)
+	driver := NewNventoryDriver(bufio.NewReader(os.Stdin))
+	driver.SetServer("http://opsdb.wc1.example.com")
 
 	tcs := []TSC{
 		// No search result positive case.
@@ -192,7 +199,7 @@ func TestSearchNodesInNventory(t *testing.T) {
 	}
 
 	tp := NewTestServer()
-	driver.server = tp.URL
+	driver.SetServer(tp.URL)
 
 	initResponses()
 
@@ -206,7 +213,7 @@ func TestSearchNodesInNventory(t *testing.T) {
 			responses[resp.key] = r
 		}
 
-		act, err := SearchByCommand(&driver, tc.input.searchCommand)
+		act, err := SearchByCommand(driver, tc.input.searchCommand)
 
 		assert.Nil(t, err, fmt.Sprintf("Error: %v", err))
 
@@ -222,7 +229,8 @@ func TestSearchNodesInNventory(t *testing.T) {
 
 func TestSetNodesInNventory(t *testing.T) {
 	logger.InitLogger(ioutil.Discard, ioutil.Discard, ioutil.Discard, ioutil.Discard, ioutil.Discard)
-	driver := NventoryDriver{server: "http://opsdb.wc1.example.com", input: bufio.NewReader(os.Stdin)}
+
+	driver := NewNventoryDriver(bufio.NewReader(os.Stdin))
 
 	tcs := []TSC2{
 		// --name ceph5.np.ev1.example.com --set avail_space=107520
@@ -249,7 +257,7 @@ func TestSetNodesInNventory(t *testing.T) {
 	}
 
 	tp := NewTestServer()
-	driver.server = tp.URL
+	driver.SetServer(tp.URL)
 
 	initResponses()
 
@@ -262,15 +270,15 @@ func TestSetNodesInNventory(t *testing.T) {
 			r.Write([]byte(resp.response))
 			responses[resp.key] = r
 		}
-		driver.input = bufio.NewReader(strings.NewReader(tc.input.userInput))
+		driver = NewNventoryDriver(bufio.NewReader(strings.NewReader(tc.input.userInput)))
+		driver.SetServer(tp.URL)
 
-		act, _ := SetByCommand(&driver, tc.input.searchCommand)
+		act, _ := SetByCommand(driver, tc.input.searchCommand)
 
 		for _, e := range tc.exp {
 			assert.Equal(t, strings.Contains(act, e), true, fmt.Sprintf("search %V\n(%#v expected,  %#v found)", tc.input.searchCommand, e, act))
 		}
 	}
-
 }
 
 type RSC struct {
@@ -287,6 +295,7 @@ func initResponses() {
 	data := []RSC{
 		{key: resp_key{m: "POST", p: "/accounts.xml"}, code: 201, response: "<account/>"},
 		{key: resp_key{m: "GET", p: "/nodes/field_names.xml"}, code: 200, response: `<field_names><field_name>name</field_name><field_name>serial_number</field_name><field_name>created_at</field_name><field_name>updated_at</field_name><field_name>processor_manufacturer</field_name><field_name>processor_model</field_name><field_name>processor_speed</field_name><field_name>physical_memory</field_name><field_name>physical_memory_sizes</field_name><field_name>os_memory</field_name><field_name>swap</field_name><field_name>console_type</field_name><field_name>uniqueid</field_name><field_name>kernel_version</field_name><field_name>description</field_name><field_name>asset_tag</field_name><field_name>timezone</field_name><field_name>expiration</field_name><field_name>contact</field_name><field_name>virtualarch</field_name><field_name>vmimg_size</field_name><field_name>vmspace_used</field_name><field_name>used_space</field_name><field_name>avail_space</field_name><field_name>config_mgmt_tag</field_name><field_name>lease_sdate</field_name><field_name>lease_edate</field_name><field_name>cage</field_name><field_name>rack_row</field_name><field_name>rack_num</field_name><field_name>rack_unit</field_name><field_name>volumes_mounted[name] (volumes_mounted)</field_name><field_name>volumes_mounted[volume_type]</field_name><field_name>volumes_mounted[configf]</field_name><field_name>volumes_mounted[description]</field_name><field_name>volumes_mounted[created_at]</field_name><field_name>volumes_mounted[updated_at]</field_name><field_name>volumes_mounted[capacity]</field_name><field_name>volumes_mounted[size]</field_name><field_name>volumes_mounted[vendor]</field_name><field_name>volumes_mounted[businfo]</field_name><field_name>volumes_mounted[serial]</field_name><field_name>volumes_mounted[physid]</field_name><field_name>volumes_mounted[dev]</field_name><field_name>volumes_mounted[logicalname]</field_name><field_name>status[name] (status)</field_name><field_name>status[description]</field_name><field_name>status[created_at]</field_name><field_name>status[updated_at]</field_name><field_name>virtual_host[name] (virtual_host)</field_name><field_name>virtual_host[serial_number]</field_name><field_name>virtual_host[created_at]</field_name><field_name>virtual_host[updated_at]</field_name><field_name>virtual_host[processor_manufacturer]</field_name><field_name>virtual_host[processor_model]</field_name><field_name>virtual_host[processor_speed]</field_name><field_name>virtual_host[physical_memory]</field_name><field_name>virtual_host[physical_memory_sizes]</field_name><field_name>virtual_host[os_memory]</field_name><field_name>virtual_host[swap]</field_name><field_name>virtual_host[console_type]</field_name><field_name>virtual_host[uniqueid]</field_name><field_name>virtual_host[kernel_version]</field_name><field_name>virtual_host[description]</field_name><field_name>virtual_host[asset_tag]</field_name><field_name>virtual_host[timezone]</field_name><field_name>virtual_host[expiration]</field_name><field_name>virtual_host[contact]</field_name><field_name>virtual_host[virtualarch]</field_name><field_name>virtual_host[vmimg_size]</field_name><field_name>virtual_host[vmspace_used]</field_name><field_name>virtual_host[used_space]</field_name><field_name>virtual_host[avail_space]</field_name><field_name>virtual_host[config_mgmt_tag]</field_name><field_name>virtual_host[lease_sdate]</field_name><field_name>virtual_host[lease_edate]</field_name><field_name>virtual_host[cage]</field_name><field_name>virtual_host[rack_row]</field_name><field_name>virtual_host[rack_num]</field_name><field_name>virtual_host[rack_unit]</field_name><field_name>preferred_operating_system[name] (preferred_operating_system)</field_name><field_name>preferred_operating_system[vendor]</field_name><field_name>preferred_operating_system[variant]</field_name><field_name>preferred_operating_system[version_number]</field_name><field_name>preferred_operating_system[created_at]</field_name><field_name>preferred_operating_system[updated_at]</field_name><field_name>preferred_operating_system[architecture]</field_name><field_name>preferred_operating_system[description]</field_name><field_name>node_groups[name] (node_groups)</field_name><field_name>node_groups[description]</field_name><field_name>node_groups[created_at]</field_name><field_name>node_groups[updated_at]</field_name><field_name>node_groups[owner]</field_name><field_name>virtual_guests[name] (virtual_guests)</field_name><field_name>virtual_guests[serial_number]</field_name><field_name>virtual_guests[created_at]</field_name><field_name>virtual_guests[updated_at]</field_name><field_name>virtual_guests[processor_manufacturer]</field_name><field_name>virtual_guests[processor_model]</field_name><field_name>virtual_guests[processor_speed]</field_name><field_name>virtual_guests[physical_memory]</field_name><field_name>virtual_guests[physical_memory_sizes]</field_name><field_name>virtual_guests[os_memory]</field_name><field_name>virtual_guests[swap]</field_name><field_name>virtual_guests[console_type]</field_name><field_name>virtual_guests[uniqueid]</field_name><field_name>virtual_guests[kernel_version]</field_name><field_name>virtual_guests[description]</field_name><field_name>virtual_guests[asset_tag]</field_name><field_name>virtual_guests[timezone]</field_name><field_name>virtual_guests[expiration]</field_name><field_name>virtual_guests[contact]</field_name><field_name>virtual_guests[virtualarch]</field_name><field_name>virtual_guests[vmimg_size]</field_name><field_name>virtual_guests[vmspace_used]</field_name><field_name>virtual_guests[used_space]</field_name><field_name>virtual_guests[avail_space]</field_name><field_name>virtual_guests[config_mgmt_tag]</field_name><field_name>virtual_guests[lease_sdate]</field_name><field_name>virtual_guests[lease_edate]</field_name><field_name>virtual_guests[cage]</field_name><field_name>virtual_guests[rack_row]</field_name><field_name>virtual_guests[rack_num]</field_name><field_name>virtual_guests[rack_unit]</field_name><field_name>ip_addresses[address] (ip_addresses)</field_name><field_name>ip_addresses[address_type]</field_name><field_name>ip_addresses[netmask]</field_name><field_name>ip_addresses[broadcast]</field_name><field_name>ip_addresses[created_at]</field_name><field_name>ip_addresses[updated_at]</field_name><field_name>ip_addresses[nmap_last_scanned_at]</field_name><field_name>comments[title]</field_name><field_name>comments[comment] (comments)</field_name><field_name>comments[created_at]</field_name><field_name>comments[commentable_type]</field_name><field_name>database_instances[name] (database_instances)</field_name><field_name>database_instances[description]</field_name><field_name>database_instances[created_at]</field_name><field_name>database_instances[updated_at]</field_name><field_name>services[name] (services)</field_name><field_name>services[description]</field_name><field_name>services[created_at]</field_name><field_name>services[updated_at]</field_name><field_name>services[owner]</field_name><field_name>node_rack[name] (node_rack)</field_name><field_name>node_rack[location]</field_name><field_name>node_rack[description]</field_name><field_name>node_rack[created_at]</field_name><field_name>node_rack[updated_at]</field_name><field_name>produced_outlets[name] (produced_outlets)</field_name><field_name>produced_outlets[created_at]</field_name><field_name>produced_outlets[updated_at]</field_name><field_name>produced_outlets[consumer_type]</field_name><field_name>lb_pools[name] (lb_pools)</field_name><field_name>lb_pools[description]</field_name><field_name>lb_pools[created_at]</field_name><field_name>lb_pools[updated_at]</field_name><field_name>lb_pools[owner]</field_name><field_name>network_interfaces[name] (network_interfaces)</field_name><field_name>network_interfaces[interface_type]</field_name><field_name>network_interfaces[physical]</field_name><field_name>network_interfaces[hardware_address]</field_name><field_name>network_interfaces[up]</field_name><field_name>network_interfaces[link]</field_name><field_name>network_interfaces[speed]</field_name><field_name>network_interfaces[full_duplex]</field_name><field_name>network_interfaces[autonegotiate]</field_name><field_name>network_interfaces[created_at]</field_name><field_name>network_interfaces[updated_at]</field_name><field_name>name_aliases[name] (name_aliases)</field_name><field_name>name_aliases[source_type]</field_name><field_name>name_aliases[created_at]</field_name><field_name>name_aliases[updated_at]</field_name><field_name>accepted_roles[name]</field_name><field_name>accepted_roles[authorizable_type]</field_name><field_name>accepted_roles[created_at]</field_name><field_name>accepted_roles[updated_at]</field_name><field_name>consumed_outlets[name] (consumed_outlets)</field_name><field_name>consumed_outlets[created_at]</field_name><field_name>consumed_outlets[updated_at]</field_name><field_name>consumed_outlets[consumer_type]</field_name><field_name>drives[name] (drives)</field_name><field_name>drives[logicalname]</field_name><field_name>drives[vendor]</field_name><field_name>drives[physid]</field_name><field_name>drives[businfo]</field_name><field_name>drives[handle]</field_name><field_name>drives[serial]</field_name><field_name>drives[description]</field_name><field_name>drives[product]</field_name><field_name>drives[size]</field_name><field_name>drives[dev]</field_name><field_name>drives[created_at]</field_name><field_name>drives[updated_at]</field_name><field_name>storage_controllers[name] (storage_controllers)</field_name><field_name>storage_controllers[controller_type]</field_name><field_name>storage_controllers[physical]</field_name><field_name>storage_controllers[businfo]</field_name><field_name>storage_controllers[slot]</field_name><field_name>storage_controllers[firmware]</field_name><field_name>storage_controllers[cache_size]</field_name><field_name>storage_controllers[batteries]</field_name><field_name>storage_controllers[created_at]</field_name><field_name>storage_controllers[updated_at]</field_name><field_name>storage_controllers[product]</field_name><field_name>storage_controllers[description]</field_name><field_name>storage_controllers[physid]</field_name><field_name>storage_controllers[vendor]</field_name><field_name>storage_controllers[handle]</field_name><field_name>storage_controllers[logicalname]</field_name><field_name>hosted_vips[name] (hosted_vips)</field_name><field_name>hosted_vips[description]</field_name><field_name>hosted_vips[created_at]</field_name><field_name>hosted_vips[updated_at]</field_name><field_name>hosted_vips[ip_address]</field_name><field_name>hosted_vips[protocol]</field_name><field_name>hosted_vips[port]</field_name><field_name>hardware_profile[name] (hardware_profile)</field_name><field_name>hardware_profile[manufacturer]</field_name><field_name>hardware_profile[rack_size]</field_name><field_name>hardware_profile[memory]</field_name><field_name>hardware_profile[disk]</field_name><field_name>hardware_profile[nics]</field_name><field_name>hardware_profile[processor_model]</field_name><field_name>hardware_profile[processor_speed]</field_name><field_name>hardware_profile[cards]</field_name><field_name>hardware_profile[description]</field_name><field_name>hardware_profile[estimated_cost]</field_name><field_name>hardware_profile[created_at]</field_name><field_name>hardware_profile[updated_at]</field_name><field_name>hardware_profile[visualization_color]</field_name><field_name>hardware_profile[outlet_type]</field_name><field_name>hardware_profile[model]</field_name><field_name>hardware_profile[processor_manufacturer]</field_name><field_name>hardware_profile[power_consumption]</field_name><field_name>operating_system[name] (operating_system)</field_name><field_name>operating_system[vendor]</field_name><field_name>operating_system[variant]</field_name><field_name>operating_system[version_number]</field_name><field_name>operating_system[created_at]</field_name><field_name>operating_system[updated_at]</field_name><field_name>operating_system[architecture]</field_name><field_name>operating_system[description]</field_name><field_name>virtual_assignments_as_host[assigned_at] (virtual_assignments_as_host)</field_name><field_name>virtual_assignments_as_host[created_at]</field_name><field_name>virtual_assignments_as_host[updated_at]</field_name><field_name>volumes_served[name] (volumes_served)</field_name><field_name>volumes_served[volume_type]</field_name><field_name>volumes_served[configf]</field_name><field_name>volumes_served[description]</field_name><field_name>volumes_served[created_at]</field_name><field_name>volumes_served[updated_at]</field_name><field_name>volumes_served[capacity]</field_name><field_name>volumes_served[size]</field_name><field_name>volumes_served[vendor]</field_name><field_name>volumes_served[businfo]</field_name><field_name>volumes_served[serial]</field_name><field_name>volumes_served[physid]</field_name><field_name>volumes_served[dev]</field_name><field_name>volumes_served[logicalname]</field_name><field_name>virtual_assignment_as_guest[assigned_at] (virtual_assignment_as_guest)</field_name><field_name>virtual_assignment_as_guest[created_at]</field_name><field_name>virtual_assignment_as_guest[updated_at]</field_name></field_names>`},
+		{key: resp_key{m: "POST", p: "/accounts.xml"}, code: 200, response: `<?xml version="1.0" encoding="UTF-8"?>`},
 	}
 	for _, d := range data {
 		r := httptest.NewRecorder()

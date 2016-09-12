@@ -95,7 +95,7 @@ func (f *NventoryClient) GetHttpClientFor(username string) *http.Client {
 	if httpClient == nil {
 		h, err := f.HttpClient.newHttpClientFor(username, passwordCallback)
 		if err != nil {
-			logger.Error.Printf("Unable to initialize HTTP Client")
+			logger.Error.Printf("Unable to initialize HTTP Client: %v\n", err)
 			os.Exit(1)
 		}
 		f.HttpClient.httpClientMap[username] = h
