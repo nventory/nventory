@@ -21,6 +21,7 @@ import (
 	"os/user"
 	"strings"
 	"regexp"
+	"net/http"
 
 
 	logger "github.com/atclate/go-logger"
@@ -85,9 +86,13 @@ func (f *NventoryDriver) GetAllSubsystemNames(objectType string) ([]string, erro
 	return f.nventoryClient.GetAllSubsystemNames(objectType)
 }
 
+func (f *NventoryDriver) GetHttpClientFor(username string) *http.Client {
+	return f.nventoryClient.GetHttpClientFor(username)
+}
+
 func (f *NventoryDriver) GetAllFields(object_type string, command map[string][]string, includes []string, flags []string) (Result, error) {
 
-	client := f.nventoryClient.GetHttpClientFor(autoreg)
+	client := f.GetHttpClientFor(autoreg)
 
 	fields, err := f.GetAllSubsystemNames(object_type)
 	if err != nil {

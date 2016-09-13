@@ -56,15 +56,12 @@ func (c *HttpClient) newHttpClientFor(username string, passwordCallback func(use
 	httpClient.CheckRedirect = NoRedirectFunc
 
 	// check if we're able to log in
-	resp, err := c.isLoggedIn(c.GetServer(), httpClient)
-	if err != nil {
-		return nil, err
-	}
+	authorized, resp, err := c.isLoggedIn(c.GetServer(), httpClient)
 	host := c.GetServer()
 
 	responseCode := resp.StatusCode
 
-	if isRedirect(responseCode) {
+	if !authorized {
 		// Not SSO redirect.
 		urlStr := getHeaderLocation(resp)
 		var isSSO = regexp.MustCompile(`^https:\/\/sso.*`)
@@ -253,7 +250,7 @@ func createBlankHttpClient() *http.Client {
 	return client
 }
 
-func (c *HttpClient) isLoggedIn(host string, httpClient *http.Client) (*http.Response, error) {
+func (c *HttpClient) isLoggedIn(host string, httpClient *http.Client) (bool, *http.Response, error) {
 	redirFunc := httpClient.CheckRedirect
 	httpClient.CheckRedirect = NoRedirectFunc
 
@@ -264,43 +261,50 @@ func (c *HttpClient) isLoggedIn(host string, httpClient *http.Client) (*http.Res
 	// if it redirects to sso location, client is not authenticated.
 	// if it responds without redirect, assume it is authenticated.
 	urlStr := fmt.Sprintf("%v/accounts.xml", host)
-	logger.Debug.Printf("posting to (%v)", urlStr)
+	logger.Debug.Printf("posting to (%v)\n", urlStr)
 	resp, err := httpClient.Post(urlStr, "application/x-www-form-urlencoded", strings.NewReader(vFoo.Encode()))
-	if err == nil {
-		respStr, err := readResponseBody(resp.Body)
-		if err == nil {
-			if isRedirectResponse(resp) {
-				logger.Debug.Printf("response %v redirected to %v", urlStr, getHeaderLocation(resp))
-				var isSSO = regexp.MustCompile(`^https:\/\/sso.*`)
-				// Follow all redirects for nginx cause POST doesn't
-				for isRedirectResponse(resp) && !isSSO.MatchString(getHeaderLocation(resp)) {
-					u, err := url.Parse(getHeaderLocation(resp))
-					if err == nil {
-						c.SetServer(fmt.Sprintf("%v://%v", u.Scheme, u.Host))
-					}
-					if u.Scheme == "" {
-						u.Scheme = "http"
-					}
+	logger.Debug.Printf("response (%v): %v\nerr: %v\n", urlStr, resp, err)
+	if err == nil || (resp != nil && isRedirectResponse(resp)) {
+		if isRedirectResponse(resp) {
+			logger.Debug.Printf("response %v redirected to %v", urlStr, getHeaderLocation(resp))
+			// Handle case if hostname was redirected, but not to sso.
+			var isSSO = regexp.MustCompile(`^https:\/\/sso.*`)
+			// Follow all redirects for nginx cause POST doesn't
+			for isRedirectResponse(resp) && !isSSO.MatchString(getHeaderLocation(resp)) {
+				u, err := url.Parse(getHeaderLocation(resp))
+				if err == nil {
 					c.SetServer(fmt.Sprintf("%v://%v", u.Scheme, u.Host))
-					urlStr = u.String()
-
-					logger.Debug.Printf("Posting to: %v\n", urlStr)
-					resp, err = httpClient.Post(urlStr, "application/x-www-form-urlencoded", strings.NewReader(url.Values{"foo": []string{"bar"}}.Encode()))
 				}
-			} else {
-				logger.Debug.Printf("response from %v:\n%v", urlStr, respStr)
-				httpClient.CheckRedirect = redirFunc
-				return resp, err
-			}
+				if u.Scheme == "" {
+					u.Scheme = "http"
+				}
+				c.SetServer(fmt.Sprintf("%v://%v", u.Scheme, u.Host))
+				urlStr = u.String()
+
+				logger.Debug.Printf("Posting to: %v\n", urlStr)
+				resp, err = httpClient.Post(urlStr, "application/x-www-form-urlencoded", strings.NewReader(url.Values{"foo": []string{"bar"}}.Encode()))
+			 }
+
 		} else {
-			logger.Debug.Printf("error from %v:\n%v", urlStr, err)
+			respStr, err := readResponseBody(resp.Body)
+			if err != nil {
+				logger.Error.Printf("Cannot read response body: %v\n", err)
+			}
+			logger.Debug.Printf("response from %v:\n%v", urlStr, respStr)
 		}
 	} else if handleResponseError(err) != nil {
 		logger.Error.Print(fmt.Sprintf("err: %v", err))
-		return resp, err
 	}
 	httpClient.CheckRedirect = redirFunc
-	return resp, err
+
+
+	var isSSO = regexp.MustCompile(`^https:\/\/sso.*`)
+	if location := getHeaderLocation(resp); isRedirectResponse(resp) && isSSO.MatchString(location) {
+		logger.Debug.Printf("POST to %v/accounts.xml was redirected. Not logged in.\n", host)
+		return false, resp, err
+	}
+
+	return true, resp, err
 }
 
 func saveCookie(cookies []*http.Cookie, domain, filename string) {

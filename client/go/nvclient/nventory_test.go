@@ -69,7 +69,7 @@ func TestCookies(t *testing.T) {
 	driver := NewNventoryDriver(bufio.NewReader(os.Stdin))
 	driver.SetServer(tp.URL)
 	//driver.SetServer("http://opsdb")
-	httpClient := driver.nventoryClient.GetHttpClientFor(autoreg)
+	httpClient := driver.GetHttpClientFor(autoreg)
 	assert.NotNil(t, httpClient, "http.Client hould not be nil")
 }
 
