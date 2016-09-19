@@ -20,6 +20,9 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"path/filepath"
+	"strings"
+	jww "github.com/spf13/jwalterweatherman"
 )
 
 var cfgFile string
@@ -44,27 +47,25 @@ func Execute() {
 }
 
 func init() {
-	cobra.OnInitialize(initConfig)
+	//cobra.OnInitialize(initConfig)
 
 	// Here you will define your flags and configuration settings.
 	// Cobra supports Persistent Flags, which, if defined here,
 	// will be global for your application.
 
-	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.go.yaml)")
+	//RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.go.yaml)")
 }
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
 	if cfgFile != "" { // enable ability to specify config file via flag
 		viper.SetConfigFile(cfgFile)
+		viper.SetConfigType(strings.Trim(filepath.Ext(cfgFile),"."))
+		viper.SupportedExts = append(viper.SupportedExts, strings.Trim(filepath.Ext(cfgFile),"."))
 	}
-
-	viper.SetConfigName(".go")   // name of config file (without extension)
-	viper.AddConfigPath("$HOME") // adding home directory as first search path
-	viper.AutomaticEnv()         // read in environment variables that match
 
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
+		jww.DEBUG.Printf("Using config file:", viper.ConfigFileUsed())
 	}
 }

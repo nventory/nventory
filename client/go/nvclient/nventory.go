@@ -33,6 +33,7 @@ const autoreg = "autoreg"
 
 var autoreg_password = "REPLACE_ME_WITH_AUTOREG_PASSWORD"
 
+
 type NventoryDriver struct {
 	server         string
 	input          *bufio.Reader
@@ -53,6 +54,10 @@ func (d *NventoryDriver) SetServer(s string) {
 
 func (d *NventoryDriver) GetServer() string {
 	return d.server
+}
+
+func (d *NventoryDriver) SetAutoregPassword(s string) {
+	autoreg_password = s
 }
 
 func (sc *SetCommands) GetSetFromFlags() map[string]string {

@@ -412,6 +412,10 @@ func (f *NventoryClient) getFieldValue(response string) (Result, error) {
 	return GetResultsFromResponse(response)
 }
 
+func (f *NventoryClient) SetAutoregPassword(pwd string) {
+	autoreg_password = pwd
+}
+
 func getChildFieldValue(node types.Node, parent string, fields []string) map[string]string {
 	result := make(map[string]string, 0)
 	if node.NodeType() == clib.TextNode {

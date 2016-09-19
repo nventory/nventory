@@ -28,8 +28,8 @@ import (
 )
 
 
-var defaultOpsdbServer = "http://opsdb"
 
+var defaultServer = "http://nventory"
 /******************************************************************************
 SetCommands:
 	Stores all commands and flags related to searching a value.
@@ -71,6 +71,7 @@ func (c *SearchCommands) IsNoStorage() bool            { return c.noStorage }
 func (c *SearchCommands) IsAllFields() bool            { return c.allFields }
 func (c *SearchCommands) GetUsername() string          { return c.username }
 func (c *SearchCommands) GetServer() string            { return c.server }
+func (c *SearchCommands) SetDefaultServer(s string)    { defaultServer = s }
 func (c *SearchCommands) IsWithAliases() bool          { return c.withAliases }
 func (c *SearchCommands) IsShowTags() bool             { return c.showtags}
 func (c *SearchCommands) IsShowVersion() bool          { return c.showVersion}
@@ -135,7 +136,7 @@ func (f *SearchCommands) InitializeCommand(app *cobra.Command) {
 	app.Flags().BoolVar(&f.noStorage, "no-storage", false, "Skip storage detection")
 
 	app.PersistentFlags().StringVar(&f.username, "username", "", "Username to use when authenticating to the server.\n\t If not specified defaults to the current user.")
-	app.PersistentFlags().StringVar(&f.server, "server", defaultOpsdbServer, "Specify nventory server if different than the default")
+	app.PersistentFlags().StringVar(&f.server, "server", defaultServer, "Specify nventory server if different than the default")
 
 	app.PersistentFlags().StringVar(&f.objectType, "objecttype", "nodes", "Object type of search.")
 	app.PersistentFlags().BoolVar(&f.withAliases, "withaliases", false, "When searching by name, search aliases as well. (doesn't work with exactget nor regexget)")

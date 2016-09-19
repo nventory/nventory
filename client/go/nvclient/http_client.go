@@ -59,6 +59,9 @@ func (c *HttpClient) newHttpClientFor(username string, passwordCallback func(use
 	authorized, resp, err := c.isLoggedIn(c.GetServer(), httpClient)
 	host := c.GetServer()
 
+	if resp == nil {
+		return httpClient, err
+	}
 	responseCode := resp.StatusCode
 
 	if !authorized {
@@ -294,6 +297,7 @@ func (c *HttpClient) isLoggedIn(host string, httpClient *http.Client) (bool, *ht
 		}
 	} else if handleResponseError(err) != nil {
 		logger.Error.Print(fmt.Sprintf("err: %v", err))
+		return false, resp, err
 	}
 	httpClient.CheckRedirect = redirFunc
 
