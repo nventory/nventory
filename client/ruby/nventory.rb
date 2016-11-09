@@ -42,7 +42,7 @@ class Net::HTTP::Put
       end
       self.body = params_array.join(sep)
       self.content_type = 'application/x-www-form-urlencoded'
-  end if method_defined? :urlencode
+  end if private_method_defined?(:urlencode) || method_defined?(:urlencode)
 end
 
 module PasswordCallback
