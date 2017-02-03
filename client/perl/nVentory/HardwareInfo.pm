@@ -1649,7 +1649,7 @@ sub getstoragedata {
     my $depth=0;
     my %storage_data;
     my @storage_nodes;
-    foreach my $node ($doc->findnodes('/node')) {
+    foreach my $node ($doc->findnodes('//node')) {
       my @results = find_storage_nodes($node, $depth);
       foreach my $storage_node (@results) { push(@storage_nodes, $storage_node); }
     }
